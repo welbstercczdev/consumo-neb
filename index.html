@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- MODIFICAÇÕES PWA -->
+    <meta name="theme-color" content="#007bff">
+    <link rel="manifest" href="manifest.json">
+    <!-- FIM DAS MODIFICAÇÕES PWA -->
+
+    <title>Controle de Consumo - Nebulização</title>
+    <!-- Adicionando Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        /* Seu CSS permanece exatamente o mesmo */
+        :root {
+            --cor-primaria: #007bff;
+            --cor-sucesso: #28a745;
+            --cor-alerta: #ffc107;
+            --cor-perigo: #dc3545;
+            --cor-cinza-claro: #f8f9fa;
+            --cor-cinza-escuro: #343a40;
+            --borda-radius: 8px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #e9ecef;
+            color: var(--cor-cinza-escuro);
+        }
+        /* ... resto do seu CSS ... */
+    </style>
+</head>
+<body>
+
+<!-- Seu HTML do Body permanece exatamente o mesmo -->
+<div class="dashboard-container">
+    <!-- ... todo o seu conteúdo HTML ... -->
+</div>
+
+<script>
+    // Seu script principal vem primeiro
+    document.addEventListener('DOMContentLoaded', function () {
+        // ... todo o seu JavaScript existente ...
+    });
+
+    // MODIFICAÇÃO PWA: Script para registrar o Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registrado com sucesso:', registration);
+                })
+                .catch(error => {
+                    console.log('Falha ao registrar o Service Worker:', error);
+                });
+        });
+    }
+</script>
+
+</body>
+</html>
