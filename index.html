@@ -5,15 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- PWA - Meta Tags e Manifest -->
     <meta name="theme-color" content="#007bff">
     <link rel="manifest" href="manifest.json">
 
     <title>Controle de Consumo - Nebulização</title>
-    <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <style>
-        /* Seu CSS completo vai aqui, sem alterações. */
         :root {
             --cor-primaria: #007bff;
             --cor-sucesso: #28a745;
@@ -23,75 +20,171 @@
             --cor-cinza-escuro: #343a40;
             --borda-radius: 8px;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px; /* Reduzido para telas pequenas */
             background-color: #e9ecef;
             color: var(--cor-cinza-escuro);
         }
+
         .dashboard-container {
             max-width: 1200px;
             margin: auto;
             background-color: #fff;
-            padding: 25px;
+            padding: 15px; /* Reduzido para telas pequenas */
             border-radius: var(--borda-radius);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
+
         h1, h2 {
             text-align: center;
             border-bottom: 1px solid #dee2e6;
             padding-bottom: 15px;
             margin-top: 0;
+            font-size: 1.5rem; /* Ajuste para mobile */
         }
-        h2 { font-size: 1.5rem; color: #495057; }
+        h2 { font-size: 1.25rem; color: #495057; }
+
         .session-panel {
             background-color: var(--cor-cinza-claro);
-            padding: 20px;
+            padding: 15px;
             border-radius: var(--borda-radius);
             margin-bottom: 25px;
             border: 1px solid #dee2e6;
         }
-        .session-info { display: flex; gap: 20px; justify-content: center; align-items: flex-end; }
+        .session-info { display: flex; flex-direction: column; gap: 15px; } /* Empilhar no mobile por padrão */
         .form-group { flex: 1; }
         label { font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem; }
         select, input {
             width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px;
             box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
+            font-size: 1rem; /* Garante boa legibilidade no mobile */
         }
         input:focus, select:focus { border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); outline: none; }
+
         .workspace-table { width: 100%; border-collapse: collapse; }
         .workspace-table th, .workspace-table td {
             border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: middle;
         }
-        .workspace-table thead th { background-color: var(--cor-cinza-claro); font-size: 0.9rem; text-transform: uppercase; }
+        .workspace-table thead { background-color: var(--cor-cinza-claro); font-size: 0.9rem; text-transform: uppercase; }
+        
         #add-row td { background-color: #fcfcfc; }
         #add-row input, #add-row select { padding: 8px; }
+
         .data-row.status-pending { background-color: #fffbeB; }
         .data-row.status-ready { background-color: #f0fff4; }
+
         .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; color: #fff; white-space: nowrap; }
         .status-pending { background-color: var(--cor-alerta); color: #333; }
         .status-ready { background-color: var(--cor-sucesso); }
-        .button { border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s, transform 0.1s; color: white; margin: 0 2px; }
+        
+        .button { border: none; border-radius: 4px; padding: 10px 14px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s, transform 0.1s; color: white; margin: 4px 2px; }
         .button:hover { filter: brightness(1.1); }
         .button:active { transform: scale(0.97); }
         .button:disabled { background-color: #adb5bd; cursor: not-allowed; filter: none; }
+
         .btn-add { background-color: var(--cor-primaria); }
         .btn-complete { background-color: var(--cor-sucesso); }
         .btn-edit { background-color: var(--cor-alerta); color: #333; }
         .btn-delete { background-color: var(--cor-perigo); }
         .btn-submit-all { font-size: 1.1rem; padding: 12px 20px; background-color: var(--cor-sucesso); }
+        
         .actions-panel { text-align: center; margin-top: 25px; }
         .error-message { color: var(--cor-perigo); font-weight: 500; text-align: center; height: 20px; }
+
         .autocomplete-list-container { position: relative; }
         .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #ddd; background-color: #fff; z-index: 1000; max-height: 200px; overflow-y: auto; list-style: none; padding: 0; margin: 0; box-sizing: border-box; }
         .autocomplete-item { padding: 10px; cursor: pointer; }
         .autocomplete-item:hover { background-color: #f0f0f0; }
+
+        /* ======================================= */
+        /* ==  MELHORIAS PARA TELAS DE DESKTOP  == */
+        /* ======================================= */
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .dashboard-container { padding: 25px; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+            .session-info { flex-direction: row; }
+        }
+
+        /* ============================================ */
+        /* ==  A MÁGICA RESPONSIVA PARA O CELULAR   == */
+        /* ============================================ */
+        @media screen and (max-width: 800px) {
+            /* 1. Esconde o cabeçalho da tabela, pois não o usaremos */
+            .workspace-table thead {
+                display: none;
+            }
+
+            /* 2. Remove a borda da tabela e faz cada linha se comportar como um bloco */
+            .workspace-table, .workspace-table tbody, .workspace-table tr, .workspace-table td {
+                display: block;
+                width: 100%;
+            }
+
+            /* 3. Transforma cada linha (TR) em um "cartão" */
+            .workspace-table tr {
+                margin-bottom: 15px;
+                border: 1px solid #ddd;
+                border-radius: var(--borda-radius);
+                overflow: hidden; /* Garante que as bordas arredondadas funcionem */
+            }
+
+            /* 4. Estiliza cada célula (TD) para ter um rótulo */
+            .workspace-table td {
+                display: flex;
+                justify-content: space-between; /* Alinha rótulo à esquerda e conteúdo à direita */
+                align-items: center;
+                padding: 10px;
+                text-align: right; /* Alinha o conteúdo à direita */
+                border: none;
+                border-bottom: 1px solid #eee;
+            }
+            .workspace-table td:last-child {
+                border-bottom: none;
+            }
+
+            /* 5. Cria o rótulo usando o atributo 'data-label' que adicionaremos no JS */
+            .workspace-table td[data-label]::before {
+                content: attr(data-label);
+                font-weight: 600;
+                text-align: left;
+                padding-right: 10px;
+                color: #555;
+            }
+
+            /* 6. Ajustes específicos para a linha de adição e de ações */
+            #add-row td, .data-row td:last-child {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            #add-row td:first-child, /* Oculta os placeholders "-" */
+            #add-row td:nth-child(5) {
+                display: none; 
+            }
+            
+            #add-row td .button {
+                width: 100%;
+                padding: 12px;
+                font-size: 1.1rem;
+            }
+             .data-row .button {
+                flex-grow: 1;
+             }
+            .data-row td:last-child {
+                flex-direction: row;
+                justify-content: space-around;
+                background-color: var(--cor-cinza-claro);
+             }
+        }
     </style>
 </head>
 <body>
 
-<!-- Seu HTML do Body completo vai aqui, sem alterações -->
+<!-- HTML do body permanece o mesmo -->
 <div class="dashboard-container">
     <h1><i class="fa-solid fa-spray-can-sparkles"></i> Controle de Consumo - Nebulização</h1>
     <div class="session-panel">
@@ -124,18 +217,18 @@
             </thead>
             <tbody id="lancamentos-body">
                 <tr id="add-row">
-                    <td>-</td>
-                    <td>
+                    <td data-label="Equipe">-</td>
+                    <td data-label="Aplicador">
                         <div class="autocomplete-list-container">
                            <input type="text" id="aplicador" placeholder="Digite o nome..." autocomplete="off">
                            <ul id="autocomplete-list" class="autocomplete-list" style="display: none;"></ul>
                         </div>
                     </td>
-                    <td><select id="atomizador"><option value="">Carregando...</option></select></td>
-                    <td><input type="number" id="gasolina" min="0"></td>
-                    <td><input type="number" id="inseticida" min="0"></td>
-                    <td>-</td>
-                    <td><button class="button btn-add" id="add-button"><i class="fa-solid fa-plus"></i> Adicionar</button></td>
+                    <td data-label="Atomizador"><select id="atomizador"><option value="">Carregando...</option></select></td>
+                    <td data-label="Gasolina"><input type="number" id="gasolina" min="0"></td>
+                    <td data-label="Inseticida"><input type="number" id="inseticida" min="0"></td>
+                    <td data-label="Status">-</td>
+                    <td data-label="Ações"><button class="button btn-add" id="add-button"><i class="fa-solid fa-plus"></i> Adicionar</button></td>
                 </tr>
             </tbody>
         </table>
@@ -149,237 +242,238 @@
     </div>
 </div>
 
-<!-- A ESTRUTURA CORRETA DO JAVASCRIPT COMEÇA AQUI -->
+
 <script>
-    // **BLOCO 1: O SCRIPT PRINCIPAL DA SUA APLICAÇÃO**
-    // Todo o seu código que faz a aplicação funcionar deve estar aqui dentro.
-    document.addEventListener('DOMContentLoaded', function () {
-        const DATA_KEY = 'consumo_Lancamentos_v6';
-        const SESSION_KEY = 'consumo_Sessao_v6';
-        const lancamentosBody = document.getElementById('lancamentos-body');
-        const addButton = document.getElementById('add-button');
-        const enviarButton = document.getElementById('enviar-button');
-        const sessionError = document.getElementById('session-error');
-        const formError = document.getElementById('form-error');
-        const successMessage = document.getElementById('success-message');
-        const sessaoDataInput = document.getElementById('sessao-data');
-        const sessaoEquipeSelect = document.getElementById('sessao-equipe');
-        const aplicadorInput = document.getElementById('aplicador');
-        const atomizadorSelect = document.getElementById('atomizador');
-        const gasolinaInput = document.getElementById('gasolina');
-        const inseticidaInput = document.getElementById('inseticida');
-        const autocompleteList = document.getElementById('autocomplete-list');
-        let lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
-        let allMembros = [];
+document.addEventListener('DOMContentLoaded', function () {
+    const DATA_KEY = 'consumo_Lancamentos_v7';
+    const SESSION_KEY = 'consumo_Sessao_v7';
+    const lancamentosBody = document.getElementById('lancamentos-body');
+    // ...resto das constantes
+    
+    // MODIFICAÇÃO CHAVE NO JAVASCRIPT: renderTabela()
+    function renderTabela() {
+        while (lancamentosBody.children.length > 1) {
+            lancamentosBody.removeChild(lancamentosBody.lastChild);
+        }
+        lancamentos.sort((a, b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.className = `data-row status-${item.status}`;
+            tr.dataset.index = index;
+            let statusHtml, actionsHtml;
 
-        function renderTabela() {
-            while (lancamentosBody.children.length > 1) {
-                lancamentosBody.removeChild(lancamentosBody.lastChild);
-            }
-            lancamentos.sort((a, b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.className = `data-row status-${item.status}`;
-                tr.dataset.index = index;
-                let statusHtml, actionsHtml;
-                if (item.status === 'pending') {
-                    statusHtml = `<span class="status-badge status-pending">Pendente</span>`;
-                    const isCompletable = item.gasolina > 0 && item.inseticida > 0;
-                    actionsHtml = `
-                        <button class="button btn-complete" data-action="complete" 
-                            ${!isCompletable ? 'disabled' : ''} 
-                            title="${!isCompletable ? 'Preencha Gasolina e Inseticida para completar' : 'Marcar como pronto'}">
-                            <i class="fa-solid fa-check"></i> Completar
-                        </button>
-                        <button class="button btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i></button>
-                    `;
-                } else {
-                    statusHtml = `<span class="status-badge status-ready">Pronto</span>`;
-                    actionsHtml = `
-                        <button class="button btn-edit" data-action="edit"><i class="fa-solid fa-pencil"></i> Editar</button>
-                        <button class="button btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i></button>
-                    `;
-                }
-                tr.innerHTML = `
-                    <td>${item.equipe}</td>
-                    <td>${item.aplicador}</td>
-                    <td>${item.atomizador}</td>
-                    <td><input type="number" class="table-input" data-field="gasolina" value="${item.gasolina || ''}" ${item.status === 'ready' ? 'disabled' : ''}></td>
-                    <td><input type="number" class="table-input" data-field="inseticida" value="${item.inseticida || ''}" ${item.status === 'ready' ? 'disabled' : ''}></td>
-                    <td>${statusHtml}</td>
-                    <td>${actionsHtml}</td>
+            if (item.status === 'pending') {
+                statusHtml = `<span class="status-badge status-pending">Pendente</span>`;
+                const isCompletable = item.gasolina > 0 && item.inseticida > 0;
+                actionsHtml = `
+                    <button class="button btn-complete" data-action="complete" 
+                        ${!isCompletable ? 'disabled' : ''} 
+                        title="${!isCompletable ? 'Preencha Gasolina e Inseticida' : 'Marcar como pronto'}">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                    <button class="button btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i></button>
                 `;
-                lancamentosBody.appendChild(tr);
-            });
-            atualizarContadorEnvio();
-            salvarDados();
-        }
-
-        addButton.addEventListener('click', () => {
-            [formError, sessionError].forEach(el => el.textContent = '');
-            const sessaoData = sessaoDataInput.value;
-            const sessaoEquipe = sessaoEquipeSelect.value;
-            if (!sessaoData || !sessaoEquipe) {
-                sessionError.textContent = 'Defina a Data e a Equipe principal.';
-                return;
-            }
-            const aplicador = aplicadorInput.value.trim();
-            const atomizador = atomizadorSelect.value;
-            if (!aplicador || !atomizador) {
-                formError.textContent = 'Aplicador e Atomizador são obrigatórios.';
-                return;
-            }
-            const chaveUnica = `${sessaoData}-${sessaoEquipe}-${aplicador}-${atomizador}`;
-            if (lancamentos.some(l => l.chave === chaveUnica)) {
-                formError.textContent = 'Este lançamento já foi adicionado.';
-                return;
-            }
-            const [year, month, day] = sessaoData.split('-');
-            const gasolina = parseFloat(gasolinaInput.value) || 0;
-            const inseticida = parseFloat(inseticidaInput.value) || 0;
-            const novoLancamento = {
-                chave: chaveUnica,
-                data: sessaoData, data_fmt: `${day}/${month}/${year}`, equipe: sessaoEquipe,
-                aplicador: aplicador, atomizador: atomizador, gasolina: gasolina, inseticida: inseticida,
-                status: (gasolina > 0 && inseticida > 0) ? 'ready' : 'pending'
-            };
-            lancamentos.push(novoLancamento);
-            [aplicadorInput, gasolinaInput, inseticidaInput, atomizadorSelect].forEach(i => i.value = '');
-            aplicadorInput.focus();
-            renderTabela();
-        });
-
-        lancamentosBody.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-            const action = button.dataset.action;
-            const index = e.target.closest('tr').dataset.index;
-            switch (action) {
-                case 'complete': lancamentos[index].status = 'ready'; break;
-                case 'edit': lancamentos[index].status = 'pending'; break;
-                case 'delete':
-                    if (confirm('Tem certeza que deseja remover este lançamento?')) {
-                        lancamentos.splice(index, 1);
-                    }
-                    break;
-            }
-            renderTabela();
-        });
-
-        lancamentosBody.addEventListener('input', (e) => {
-            if (e.target.classList.contains('table-input')) {
-                const index = e.target.closest('tr').dataset.index;
-                const field = e.target.dataset.field;
-                lancamentos[index][field] = parseFloat(e.target.value) || 0;
-                renderTabela();
-            }
-        });
-
-        function atualizarContadorEnvio() {
-            const prontos = lancamentos.filter(l => l.status === 'ready');
-            enviarButton.disabled = prontos.length === 0;
-            enviarButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar ${prontos.length} Lançamentos Prontos`;
-        }
-        const salvarDados = () => localStorage.setItem(DATA_KEY, JSON.stringify(lancamentos));
-        const salvarSessao = () => localStorage.setItem(SESSION_KEY, JSON.stringify({ data: sessaoDataInput.value, equipe: sessaoEquipeSelect.value }));
-        const carregarSessao = () => {
-            const sessao = JSON.parse(localStorage.getItem(SESSION_KEY));
-            if (sessao) {
-                sessaoDataInput.value = sessao.data || new Date().toISOString().split('T')[0];
-                sessaoEquipeSelect.value = sessao.equipe || '';
             } else {
-                 sessaoDataInput.value = new Date().toISOString().split('T')[0];
+                statusHtml = `<span class="status-badge status-ready">Pronto</span>`;
+                actionsHtml = `
+                    <button class="button btn-edit" data-action="edit"><i class="fa-solid fa-pencil"></i></button>
+                    <button class="button btn-delete" data-action="delete"><i class="fa-solid fa-trash"></i></button>
+                `;
             }
-            salvarSessao();
-        };
-        sessaoDataInput.addEventListener('change', salvarSessao);
-        sessaoEquipeSelect.addEventListener('change', salvarSessao);
 
-        enviarButton.addEventListener('click', async () => {
-            const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
-            if (prontosParaEnviar.length === 0) return;
-            successMessage.textContent = 'Enviando...';
-            successMessage.style.display = 'block';
-            successMessage.style.color = 'var(--cor-cinza-escuro)';
-            enviarButton.disabled = true;
-            try {
-                for (const pedido of prontosParaEnviar) {
-                    const payload = { data: pedido.data_fmt, equipe: pedido.equipe, aplicador: pedido.aplicador, atomizador: pedido.atomizador, gasolina: pedido.gasolina, inseticida: pedido.inseticida };
-                    await enviarPedido(payload);
-                }
-                successMessage.textContent = 'Lançamentos enviados com sucesso!';
-                successMessage.style.color = 'var(--cor-sucesso)';
-                setTimeout(() => successMessage.style.display = 'none', 3000);
-                lancamentos = lancamentos.filter(l => l.status !== 'ready');
-                renderTabela();
-            } catch(error) {
-                successMessage.textContent = `Erro ao enviar: ${error.message}`;
-                successMessage.style.color = 'var(--cor-perigo)';
-                console.error("Erro no envio:", error);
-            } finally {
-                enviarButton.disabled = false;
-            }
+            // Adicionamos o atributo `data-label` a cada TD para o CSS responsivo funcionar
+            tr.innerHTML = `
+                <td data-label="Equipe">${item.equipe}</td>
+                <td data-label="Aplicador">${item.aplicador}</td>
+                <td data-label="Atomizador">${item.atomizador}</td>
+                <td data-label="Gasolina"><input type="number" class="table-input" data-field="gasolina" value="${item.gasolina || ''}" ${item.status === 'ready' ? 'disabled' : ''}></td>
+                <td data-label="Inseticida"><input type="number" class="table-input" data-field="inseticida" value="${item.inseticida || ''}" ${item.status === 'ready' ? 'disabled' : ''}></td>
+                <td data-label="Status">${statusHtml}</td>
+                <td data-label="Ações">${actionsHtml}</td>
+            `;
+            lancamentosBody.appendChild(tr);
         });
+        atualizarContadorEnvio();
+        salvarDados();
+    }
+    
+    // O resto do seu JavaScript continua exatamente o mesmo
+    // ...
+    // Cole aqui o restante do seu bloco de script da versão anterior.
+    const addButton = document.getElementById('add-button');
+    const enviarButton = document.getElementById('enviar-button');
+    const sessionError = document.getElementById('session-error');
+    const formError = document.getElementById('form-error');
+    const successMessage = document.getElementById('success-message');
+    const sessaoDataInput = document.getElementById('sessao-data');
+    const sessaoEquipeSelect = document.getElementById('sessao-equipe');
+    const aplicadorInput = document.getElementById('aplicador');
+    const atomizadorSelect = document.getElementById('atomizador');
+    const gasolinaInput = document.getElementById('gasolina');
+    const inseticidaInput = document.getElementById('inseticida');
+    const autocompleteList = document.getElementById('autocomplete-list');
+    let lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
+    let allMembros = [];
 
-        async function enviarPedido(pedido) {
-            const apiUrl = 'https://script.google.com/macros/s/AKfycbwoQBltuMUVyyHCHLS2zomqEq0OBf50_jPwtaFqEhpFbSIosTbfbNu3fxs3S6AmYSVZTg/exec';
-            const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
-            if (!response.ok) throw new Error('Falha na resposta da API.');
-            return response.text();
+    addButton.addEventListener('click', () => {
+        [formError, sessionError].forEach(el => el.textContent = '');
+        const sessaoData = sessaoDataInput.value;
+        const sessaoEquipe = sessaoEquipeSelect.value;
+        if (!sessaoData || !sessaoEquipe) {
+            sessionError.textContent = 'Defina a Data e a Equipe principal.';
+            return;
         }
-        
-        const carregarOpcoes = () => {
-             fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
-                .then(r => r.json()).then(data => {
-                    const equipeSelect = document.getElementById('sessao-equipe');
-                    equipeSelect.innerHTML = '<option value="">Selecione a Equipe...</option>';
-                    for (const equipe in data.equipes) { equipeSelect.add(new Option(equipe, equipe)); }
-                    allMembros = [...data.todos_membros].sort();
-                    carregarSessao();
-                }).catch(e => console.error("Erro ao carregar equipes:", e));
-             fetch('https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec')
-                .then(r => r.json()).then(data => {
-                    atomizadorSelect.innerHTML = '<option value="">Selecione...</option>';
-                    data.atomizadores.forEach(a => atomizadorSelect.add(new Option(a, a)));
-                }).catch(e => console.error("Erro ao carregar atomizadores:", e));
+        const aplicador = aplicadorInput.value.trim();
+        const atomizador = atomizadorSelect.value;
+        if (!aplicador || !atomizador) {
+            formError.textContent = 'Aplicador e Atomizador são obrigatórios.';
+            return;
+        }
+        const chaveUnica = `${sessaoData}-${sessaoEquipe}-${aplicador}-${atomizador}`;
+        if (lancamentos.some(l => l.chave === chaveUnica)) {
+            formError.textContent = 'Este lançamento já foi adicionado.';
+            return;
+        }
+        const [year, month, day] = sessaoData.split('-');
+        const gasolina = parseFloat(gasolinaInput.value) || 0;
+        const inseticida = parseFloat(inseticidaInput.value) || 0;
+        const novoLancamento = {
+            chave: chaveUnica,
+            data: sessaoData, data_fmt: `${day}/${month}/${year}`, equipe: sessaoEquipe,
+            aplicador: aplicador, atomizador: atomizador, gasolina: gasolina, inseticida: inseticida,
+            status: (gasolina > 0 && inseticida > 0) ? 'ready' : 'pending'
         };
-
-        aplicadorInput.addEventListener('input', function () {
-            const inputValue = aplicadorInput.value.toLowerCase();
-            autocompleteList.innerHTML = ''; autocompleteList.style.display = 'none';
-            if (inputValue.length > 0) {
-                const filteredMembros = allMembros.filter(m => m.toLowerCase().includes(inputValue));
-                if (filteredMembros.length > 0) {
-                    filteredMembros.forEach(m => {
-                        const li = document.createElement('li');
-                        li.textContent = m; li.className = 'autocomplete-item';
-                        li.addEventListener('click', function () { aplicadorInput.value = m; autocompleteList.style.display = 'none'; });
-                        autocompleteList.appendChild(li);
-                    });
-                    autocompleteList.style.display = 'block';
-                }
-            }
-        });
-        document.addEventListener('click', function (event) {
-            if (!event.target.closest('.autocomplete-list-container')) { autocompleteList.style.display = 'none'; }
-        });
-
-        carregarOpcoes();
+        lancamentos.push(novoLancamento);
+        [aplicadorInput, gasolinaInput, inseticidaInput, atomizadorSelect].forEach(i => i.value = '');
+        aplicadorInput.focus();
         renderTabela();
     });
+
+    lancamentosBody.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+        const action = button.dataset.action;
+        const index = e.target.closest('tr').dataset.index;
+        switch (action) {
+            case 'complete': lancamentos[index].status = 'ready'; break;
+            case 'edit': lancamentos[index].status = 'pending'; break;
+            case 'delete':
+                if (confirm('Tem certeza que deseja remover este lançamento?')) {
+                    lancamentos.splice(index, 1);
+                }
+                break;
+        }
+        renderTabela();
+    });
+
+    lancamentosBody.addEventListener('input', (e) => {
+        if (e.target.classList.contains('table-input')) {
+            const index = e.target.closest('tr').dataset.index;
+            const field = e.target.dataset.field;
+            lancamentos[index][field] = parseFloat(e.target.value) || 0;
+            renderTabela();
+        }
+    });
+
+    function atualizarContadorEnvio() {
+        const prontos = lancamentos.filter(l => l.status === 'ready');
+        enviarButton.disabled = prontos.length === 0;
+        enviarButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar ${prontos.length} Lançamentos Prontos`;
+    }
+    const salvarDados = () => localStorage.setItem(DATA_KEY, JSON.stringify(lancamentos));
+    const salvarSessao = () => localStorage.setItem(SESSION_KEY, JSON.stringify({ data: sessaoDataInput.value, equipe: sessaoEquipeSelect.value }));
+    const carregarSessao = () => {
+        const sessao = JSON.parse(localStorage.getItem(SESSION_KEY));
+        if (sessao) {
+            sessaoDataInput.value = sessao.data || new Date().toISOString().split('T')[0];
+            sessaoEquipeSelect.value = sessao.equipe || '';
+        } else {
+             sessaoDataInput.value = new Date().toISOString().split('T')[0];
+        }
+        salvarSessao();
+    };
+    sessaoDataInput.addEventListener('change', salvarSessao);
+    sessaoEquipeSelect.addEventListener('change', salvarSessao);
+
+    enviarButton.addEventListener('click', async () => {
+        const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
+        if (prontosParaEnviar.length === 0) return;
+        successMessage.textContent = 'Enviando...';
+        successMessage.style.display = 'block';
+        successMessage.style.color = 'var(--cor-cinza-escuro)';
+        enviarButton.disabled = true;
+        try {
+            for (const pedido of prontosParaEnviar) {
+                const payload = { data: pedido.data_fmt, equipe: pedido.equipe, aplicador: pedido.aplicador, atomizador: pedido.atomizador, gasolina: pedido.gasolina, inseticida: pedido.inseticida };
+                await enviarPedido(payload);
+            }
+            successMessage.textContent = 'Lançamentos enviados com sucesso!';
+            successMessage.style.color = 'var(--cor-sucesso)';
+            setTimeout(() => successMessage.style.display = 'none', 3000);
+            lancamentos = lancamentos.filter(l => l.status !== 'ready');
+            renderTabela();
+        } catch(error) {
+            successMessage.textContent = `Erro ao enviar: ${error.message}`;
+            successMessage.style.color = 'var(--cor-perigo)';
+            console.error("Erro no envio:", error);
+        } finally {
+            enviarButton.disabled = false;
+        }
+    });
+
+    async function enviarPedido(pedido) {
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbwoQBltuMUVyyHCHLS2zomqEq0OBf50_jPwtaFqEhpFbSIosTbfbNu3fxs3S6AmYSVZTg/exec';
+        const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
+        if (!response.ok) throw new Error('Falha na resposta da API.');
+        return response.text();
+    }
+    
+    const carregarOpcoes = () => {
+         fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
+            .then(r => r.json()).then(data => {
+                const equipeSelect = document.getElementById('sessao-equipe');
+                equipeSelect.innerHTML = '<option value="">Selecione a Equipe...</option>';
+                for (const equipe in data.equipes) { equipeSelect.add(new Option(equipe, equipe)); }
+                allMembros = [...data.todos_membros].sort();
+                carregarSessao();
+            }).catch(e => console.error("Erro ao carregar equipes:", e));
+         fetch('https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec')
+            .then(r => r.json()).then(data => {
+                atomizadorSelect.innerHTML = '<option value="">Selecione...</option>';
+                data.atomizadores.forEach(a => atomizadorSelect.add(new Option(a, a)));
+            }).catch(e => console.error("Erro ao carregar atomizadores:", e));
+    };
+
+    aplicadorInput.addEventListener('input', function () {
+        const inputValue = aplicadorInput.value.toLowerCase();
+        autocompleteList.innerHTML = ''; autocompleteList.style.display = 'none';
+        if (inputValue.length > 0) {
+            const filteredMembros = allMembros.filter(m => m.toLowerCase().includes(inputValue));
+            if (filteredMembros.length > 0) {
+                filteredMembros.forEach(m => {
+                    const li = document.createElement('li');
+                    li.textContent = m; li.className = 'autocomplete-item';
+                    li.addEventListener('click', function () { aplicadorInput.value = m; autocompleteList.style.display = 'none'; });
+                    autocompleteList.appendChild(li);
+                });
+                autocompleteList.style.display = 'block';
+            }
+        }
+    });
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.autocomplete-list-container')) { autocompleteList.style.display = 'none'; }
+    });
+
+    carregarOpcoes();
+    renderTabela();
+});
 </script>
 
 <script>
-    // **BLOCO 2: O SCRIPT DE REGISTRO DO PWA**
-    // Este bloco é separado e registra o Service Worker.
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registrado com sucesso:', registration);
-                })
-                .catch(error => {
-                    console.log('Falha ao registrar o Service Worker:', error);
-                });
+                .then(registration => console.log('Service Worker: Registrado com sucesso!'))
+                .catch(error => console.log('Service Worker: Falha no registro: ', error));
         });
     }
 </script>
