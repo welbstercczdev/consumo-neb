@@ -33,91 +33,45 @@
             margin: 0;
             background-color: var(--cor-fundo);
             color: var(--cor-texto);
-            -webkit-tap-highlight-color: transparent; /* Remove o destaque azul ao tocar em links no mobile */
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .main-container { padding: 15px; padding-bottom: 100px; /* Espaço para o botão de envio fixo */ }
-
+        .main-container { padding: 15px; padding-bottom: 100px; }
         .header { text-align: center; color: var(--cor-primaria-escura); margin-bottom: 20px; }
         .header h1 { margin: 0; font-size: 1.8rem; }
 
-        .session-panel {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: var(--borda-radius);
-            margin-bottom: 20px;
-            box-shadow: var(--sombra);
-        }
+        .session-panel { background-color: #fff; padding: 20px; border-radius: var(--borda-radius); margin-bottom: 20px; box-shadow: var(--sombra); }
         .session-panel h2 { margin: 0 0 15px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
         .session-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; display: block; }
         select, input { width: 100%; padding: 12px; border: 1px solid var(--cor-borda); border-radius: 8px; font-size: 1rem; }
         input:focus, select:focus { border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); outline: none; }
 
-        /* Estilo dos Cards de Lançamento */
         #lancamentos-container { display: grid; gap: 15px; }
-        .lancamento-card {
-            background-color: #fff;
-            border-radius: var(--borda-radius);
-            box-shadow: var(--sombra);
-            border-left: 5px solid;
-            transition: transform 0.2s ease-in-out;
-        }
+        .lancamento-card { background-color: #fff; border-radius: var(--borda-radius); box-shadow: var(--sombra); border-left: 5px solid; transition: transform 0.2s ease-in-out; }
         .lancamento-card:hover { transform: translateY(-3px); }
         .card-body { padding: 15px; }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .card-title { margin: 0; font-size: 1.2rem; }
         .card-subtitle { margin: 0; color: #6c757d; font-size: 0.9rem; }
-        
         .card-consumo { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .card-consumo input { text-align: center; font-weight: 600; font-size: 1.1rem; }
-        
         .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--cor-fundo); border-top: 1px solid var(--cor-borda); }
-        
         .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 700; color: #fff; }
         .status-pending { border-color: var(--cor-alerta); }
         .status-pending .status-badge { background-color: var(--cor-alerta); color: #333; }
         .status-ready { border-color: var(--cor-sucesso); }
         .status-ready .status-badge { background-color: var(--cor-sucesso); }
-        
         .card-actions button { background: none; border: none; font-size: 1.3rem; padding: 5px; cursor: pointer; }
         .action-edit { color: var(--cor-alerta); }
         .action-complete { color: var(--cor-sucesso); }
         .action-delete { color: var(--cor-perigo); }
         .action-complete:disabled { color: #ccc; }
 
-        /* Botão Flutuante (FAB) */
-        .fab {
-            position: fixed;
-            bottom: 90px; /* Posição acima da barra de ação inferior */
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background-color: var(--cor-primaria);
-            color: #fff;
-            border-radius: 50%;
-            border: none;
-            font-size: 1.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
-            z-index: 1000;
-        }
-
-        /* Modal de Adição */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 2000;
-        }
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background-color: var(--cor-primaria); color: #fff; border-radius: 50%; border: none; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(0,123,255,0.4); z-index: 1000; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 2000; }
         .modal-overlay.visible { opacity: 1; visibility: visible; }
-        .modal-content {
-            background: #fff; padding: 25px; border-radius: var(--borda-radius);
-            width: 90%; max-width: 500px;
-            transform: scale(0.95); transition: transform 0.3s;
-        }
+        .modal-content { background: #fff; padding: 25px; border-radius: var(--borda-radius); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
         .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h2 { font-size: 1.3rem; margin: 0; border: none; }
@@ -125,65 +79,52 @@
         .modal-body .form-group { margin-bottom: 15px; }
         .modal-footer { margin-top: 20px; text-align: right; }
         .btn-salvar { background-color: var(--cor-primaria); color: #fff; padding: 12px 20px; border: none; border-radius: 8px; font-size: 1rem; }
-
-        .bottom-actions {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #ffffff;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.07);
-            z-index: 999;
-        }
+        
+        .bottom-actions { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; padding: 15px; text-align: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.07); z-index: 999; }
         .btn-submit-all { background-color: var(--cor-sucesso); color: #fff; border: none; border-radius: 50px; padding: 15px 25px; font-size: 1.1rem; font-weight: 600; width: 100%; max-width: 400px; }
         
         .error-message { color: var(--cor-perigo); font-weight: 500; text-align: center; height: 20px; font-size: 0.9rem; }
+        
+        /* MODIFICADO: Estilos para o Autocomplete */
+        .autocomplete-container { position: relative; }
+        .autocomplete-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            border: 1px solid #ddd; background-color: #fff; z-index: 2001; /* Z-index maior que o do modal */
+            max-height: 150px; overflow-y: auto; list-style: none;
+            padding: 0; margin: 0; box-sizing: border-box; border-radius: 8px;
+        }
+        .autocomplete-item { padding: 10px; cursor: pointer; }
+        .autocomplete-item:hover { background-color: #f0f0f0; }
     </style>
 </head>
 <body>
 
 <div class="main-container">
-    <header class="header">
-        <h1>Controle de Consumo</h1>
-    </header>
-
+    <header class="header"><h1>Controle de Consumo</h1></header>
     <div class="session-panel">
         <h2><i class="fa-solid fa-calendar-days"></i> Sessão de Trabalho</h2>
         <div class="session-info">
-            <div class="form-group">
-                <label for="sessao-data">Data</label>
-                <input type="date" id="sessao-data">
-            </div>
-            <div class="form-group">
-                <label for="sessao-equipe">Equipe</label>
-                <select id="sessao-equipe"><option value="">...</option></select>
-            </div>
+            <div class="form-group"><label for="sessao-data">Data</label><input type="date" id="sessao-data"></div>
+            <div class="form-group"><label for="sessao-equipe">Equipe</label><select id="sessao-equipe"><option value="">...</option></select></div>
         </div>
         <div class="error-message" id="session-error"></div>
     </div>
-
-    <div id="lancamentos-container">
-        <!-- Cards de Lançamento serão injetados aqui -->
-    </div>
-
+    <div id="lancamentos-container"></div>
 </div>
 
-<!-- Botão Flutuante -->
 <button class="fab" id="fab-add"><i class="fa-solid fa-plus"></i></button>
 
-<!-- Modal para Novo Lançamento -->
 <div class="modal-overlay" id="add-modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Novo Lançamento</h2>
-            <button class="close-btn" id="modal-close-btn">×</button>
+            <h2>Novo Lançamento</h2><button class="close-btn" id="modal-close-btn">×</button>
         </div>
         <div class="modal-body">
-            <div class="form-group">
+            <!-- MODIFICADO: Adicionado container e <ul> para o autocomplete -->
+            <div class="form-group autocomplete-container">
                 <label for="modal-aplicador">Aplicador</label>
                 <input type="text" id="modal-aplicador" autocomplete="off">
+                <ul id="modal-autocomplete-list" class="autocomplete-list" style="display: none;"></ul>
             </div>
             <div class="form-group">
                 <label for="modal-atomizador">Atomizador</label>
@@ -199,18 +140,11 @@
             </div>
             <div class="error-message" id="modal-error"></div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-salvar" id="modal-save-btn">Salvar Lançamento</button>
-        </div>
+        <div class="modal-footer"><button class="btn-salvar" id="modal-save-btn">Salvar Lançamento</button></div>
     </div>
 </div>
 
-<!-- Barra de Ação Inferior -->
-<div class="bottom-actions">
-    <button class="btn-submit-all" id="enviar-button" disabled>
-        <i class="fa-solid fa-paper-plane"></i> Enviar (0)
-    </button>
-</div>
+<div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -234,6 +168,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalAtomizador = document.getElementById('modal-atomizador');
     const modalGasolina = document.getElementById('modal-gasolina');
     const modalInseticida = document.getElementById('modal-inseticida');
+    // MODIFICADO: Referência para a lista de autocomplete do modal
+    const modalAutocompleteList = document.getElementById('modal-autocomplete-list');
 
     let lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
     let allMembros = [];
@@ -244,22 +180,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (lancamentos.length === 0) {
             lancamentosContainer.innerHTML = '<p style="text-align:center; color:#6c757d;">Nenhum lançamento ainda. Clique no botão + para começar.</p>';
         }
-
         lancamentos.sort((a,b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
             const card = document.createElement('div');
             card.className = `lancamento-card status-${item.status}`;
             card.dataset.index = index;
-
             const isCompletable = item.gasolina > 0 && item.inseticida > 0;
             const isReady = item.status === 'ready';
-
             let actionsHtml;
             if (isReady) {
                 actionsHtml = `<button class="action-edit" data-action="edit" title="Editar"><i class="fa-solid fa-pencil"></i></button>`;
             } else {
                 actionsHtml = `<button class="action-complete" data-action="complete" title="${isCompletable ? 'Marcar como Pronto' : 'Preencha os consumos'}" ${!isCompletable ? 'disabled' : ''}><i class="fa-solid fa-check"></i></button>`;
             }
-
             card.innerHTML = `
                 <div class="card-body">
                     <div class="card-header">
@@ -269,22 +201,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div class="card-consumo">
-                        <div class="form-group">
-                            <label>Gasolina (ml)</label>
-                            <input type="number" class="card-input" data-field="gasolina" value="${item.gasolina || ''}" ${isReady ? 'disabled' : ''}>
-                        </div>
-                        <div class="form-group">
-                            <label>Inseticida (ml)</label>
-                            <input type="number" class="card-input" data-field="inseticida" value="${item.inseticida || ''}" ${isReady ? 'disabled' : ''}>
-                        </div>
+                        <div class="form-group"><label>Gasolina (ml)</label><input type="number" class="card-input" data-field="gasolina" value="${item.gasolina || ''}" ${isReady ? 'disabled' : ''}></div>
+                        <div class="form-group"><label>Inseticida (ml)</label><input type="number" class="card-input" data-field="inseticida" value="${item.inseticida || ''}" ${isReady ? 'disabled' : ''}></div>
                     </div>
                 </div>
                 <div class="card-footer">
                     <span class="status-badge">${isReady ? 'Pronto' : 'Pendente'}</span>
-                    <div class="card-actions">
-                        ${actionsHtml}
-                        <button class="action-delete" data-action="delete" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-                    </div>
+                    <div class="card-actions">${actionsHtml}<button class="action-delete" data-action="delete" title="Excluir"><i class="fa-solid fa-trash"></i></button></div>
                 </div>
             `;
             lancamentosContainer.appendChild(card);
@@ -295,54 +218,29 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // ---- LÓGICA DO MODAL ----
     const toggleModal = (show) => {
-        if (show) {
-            addModal.style.display = 'flex';
-            setTimeout(() => addModal.classList.add('visible'), 10);
-        } else {
-            addModal.classList.remove('visible');
-            setTimeout(() => addModal.style.display = 'none', 300);
-        }
+        if (show) { addModal.style.display = 'flex'; setTimeout(() => addModal.classList.add('visible'), 10); } 
+        else { addModal.classList.remove('visible'); setTimeout(() => addModal.style.display = 'none', 300); }
     };
     fabAdd.addEventListener('click', () => toggleModal(true));
     modalCloseBtn.addEventListener('click', () => toggleModal(false));
-    addModal.addEventListener('click', (e) => {
-        if (e.target === addModal) toggleModal(false);
-    });
-
+    addModal.addEventListener('click', (e) => { if (e.target === addModal) toggleModal(false); });
     modalSaveBtn.addEventListener('click', () => {
         modalError.textContent = ''; sessionError.textContent = '';
         const sessaoData = sessaoDataInput.value;
         const sessaoEquipe = sessaoEquipeSelect.value;
-        if (!sessaoData || !sessaoEquipe) {
-            sessionError.textContent = 'Defina a Data e a Equipe principal.';
-            toggleModal(false);
-            return;
-        }
-
+        if (!sessaoData || !sessaoEquipe) { sessionError.textContent = 'Defina a Data e a Equipe principal.'; toggleModal(false); return; }
         const aplicador = modalAplicador.value.trim();
         const atomizador = modalAtomizador.value;
-        if (!aplicador || !atomizador) {
-            modalError.textContent = 'Aplicador e Atomizador são obrigatórios.';
-            return;
-        }
-
+        if (!aplicador || !atomizador) { modalError.textContent = 'Aplicador e Atomizador são obrigatórios.'; return; }
         const chaveUnica = `${sessaoData}-${sessaoEquipe}-${aplicador}-${atomizador}`;
-        if (lancamentos.some(l => l.chave === chaveUnica)) {
-            modalError.textContent = 'Este lançamento já foi adicionado.';
-            return;
-        }
-
+        if (lancamentos.some(l => l.chave === chaveUnica)) { modalError.textContent = 'Este lançamento já foi adicionado.'; return; }
         const [year, month, day] = sessaoData.split('-');
         const gasolina = parseFloat(modalGasolina.value) || 0;
         const inseticida = parseFloat(modalInseticida.value) || 0;
-        
         lancamentos.push({
-            chave: chaveUnica,
-            data: sessaoData, data_fmt: `${day}/${month}/${year}`, equipe: sessaoEquipe,
-            aplicador, atomizador, gasolina, inseticida,
-            status: (gasolina > 0 && inseticida > 0) ? 'ready' : 'pending'
+            chave: chaveUnica, data: sessaoData, data_fmt: `${day}/${month}/${year}`, equipe: sessaoEquipe,
+            aplicador, atomizador, gasolina, inseticida, status: (gasolina > 0 && inseticida > 0) ? 'ready' : 'pending'
         });
-        
         [modalAplicador, modalGasolina, modalInseticida].forEach(i => i.value = '');
         modalAtomizador.value = '';
         toggleModal(false);
@@ -355,20 +253,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!button) return;
         const index = e.target.closest('.lancamento-card').dataset.index;
         const action = button.dataset.action;
-
         if (action === 'complete') lancamentos[index].status = 'ready';
         if (action === 'edit') lancamentos[index].status = 'pending';
         if (action === 'delete' && confirm('Remover este lançamento?')) lancamentos.splice(index, 1);
-        
         renderLancamentos();
     });
-
     lancamentosContainer.addEventListener('input', (e) => {
         if (e.target.classList.contains('card-input')) {
             const index = e.target.closest('.lancamento-card').dataset.index;
-            const field = e.target.dataset.field;
-            lancamentos[index][field] = parseFloat(e.target.value) || 0;
-            renderLancamentos(); // Re-renderiza para atualizar o estado do botão completar
+            lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
+            renderLancamentos();
         }
     });
     
@@ -388,23 +282,19 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     sessaoDataInput.addEventListener('change', salvarSessao);
     sessaoEquipeSelect.addEventListener('change', salvarSessao);
-
     enviarButton.addEventListener('click', async () => {
         const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
         if (prontosParaEnviar.length === 0) return;
         enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
         enviarButton.disabled = true;
-        
         try {
             for (const pedido of prontosParaEnviar) {
                 const payload = { data: pedido.data_fmt, equipe: pedido.equipe, aplicador: pedido.aplicador, atomizador: pedido.atomizador, gasolina: pedido.gasolina, inseticida: pedido.inseticida };
                 await enviarPedido(payload);
             }
-            
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
             renderLancamentos();
             alert('Lançamentos enviados com sucesso!');
-
         } catch(error) {
             alert(`Ocorreu um erro ao enviar os dados: ${error.message}`);
             console.error("Erro no envio:", error);
@@ -412,7 +302,6 @@ document.addEventListener('DOMContentLoaded', function () {
             atualizarContadorEnvio();
         }
     });
-
     async function enviarPedido(pedido) {
         const apiUrl = 'https://script.google.com/macros/s/AKfycbwoQBltuMUVyyHCHLS2zomqEq0OBf50_jPwtaFqEhpFbSIosTbfbNu3fxs3S6AmYSVZTg/exec';
         const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
@@ -435,8 +324,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }).catch(e => console.error("Erro ao carregar atomizadores:", e));
     };
     
-    // Autocomplete não é mais necessário, pois o input está no modal
-    
+    // MODIFICADO: Lógica de Autocomplete para o Modal
+    modalAplicador.addEventListener('input', function () {
+        const inputValue = modalAplicador.value.toLowerCase();
+        modalAutocompleteList.innerHTML = '';
+        modalAutocompleteList.style.display = 'none';
+
+        if (inputValue.length > 0) {
+            const filteredMembros = allMembros.filter(m => m.toLowerCase().includes(inputValue));
+            if (filteredMembros.length > 0) {
+                filteredMembros.forEach(membro => {
+                    const li = document.createElement('li');
+                    li.textContent = membro;
+                    li.className = 'autocomplete-item';
+                    li.addEventListener('click', function () {
+                        modalAplicador.value = membro;
+                        modalAutocompleteList.style.display = 'none';
+                    });
+                    modalAutocompleteList.appendChild(li);
+                });
+                modalAutocompleteList.style.display = 'block';
+            }
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        // Esconde a lista se o clique for fora do container de autocomplete do modal
+        if (!event.target.closest('.autocomplete-container')) {
+            modalAutocompleteList.style.display = 'none';
+        }
+    });
+
     carregarOpcoes();
     renderLancamentos();
 });
