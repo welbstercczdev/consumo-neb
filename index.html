@@ -10,7 +10,7 @@
     <title>Controle de Consumo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <style>
-        /* [SEUS ESTILOS CSS PERMANECEM OS MESMOS - NENHUMA ALTERAÇÃO NECESSÁRIA] */
+        /* [SEUS ESTILOS CSS PERMANECEM OS MESMOS] */
         :root {
             --cor-primaria: #007bff;
             --cor-primaria-escura: #0056b3;
@@ -32,7 +32,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        #app-container, #access-denied-container, #verifying-container { display: none; }
+        #app-container, #access-denied-container { display: none; } /* Começam ocultos */
         .full-page-container {
             display: flex;
             flex-direction: column;
@@ -58,7 +58,60 @@
         
         /* O resto dos seus estilos permanecem os mesmos */
         .main-container { padding: 15px; padding-bottom: 170px; }
-        /* ... etc ... */
+        .header { text-align: center; color: var(--cor-primaria-escura); margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 1.8rem; }
+        .session-panel { background-color: #fff; padding: 20px; border-radius: var(--borda-radius); margin-bottom: 20px; box-shadow: var(--sombra); }
+        .session-panel h2 { margin: 0 0 15px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .session-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; display: block; }
+        select, input { width: 100%; padding: 12px; border: 1px solid var(--cor-borda); border-radius: 8px; font-size: 1rem; }
+        input:focus, select:focus { border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); outline: none; }
+        #lancamentos-container { display: grid; gap: 15px; }
+        .lancamento-card { background-color: #fff; border-radius: var(--borda-radius); box-shadow: var(--sombra); border-left: 5px solid; transition: transform 0.2s ease-in-out; }
+        .card-body { padding: 15px; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .card-title { margin: 0; font-size: 1.2rem; }
+        .card-subtitle { margin: 0; color: #6c757d; font-size: 0.9rem; }
+        .card-consumo { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .card-consumo input { text-align: center; font-weight: 600; font-size: 1.1rem; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--cor-fundo); border-top: 1px solid var(--cor-borda); }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 700; color: #fff; }
+        .status-pending { border-color: var(--cor-alerta); }
+        .status-pending .status-badge { background-color: var(--cor-alerta); color: #333; }
+        .status-ready { border-color: var(--cor-sucesso); }
+        .status-ready .status-badge { background-color: var(--cor-sucesso); }
+        .card-actions button { background: none; border: none; font-size: 1.3rem; padding: 5px; cursor: pointer; }
+        .action-edit { color: var(--cor-alerta); }
+        .action-complete { color: var(--cor-sucesso); }
+        .action-delete { color: var(--cor-perigo); }
+        .action-complete:disabled { color: #ccc; }
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background-color: var(--cor-primaria); color: #fff; border-radius: 50%; border: none; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(0,123,255,0.4); z-index: 1000; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 2000; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { background: #fff; padding: 25px; border-radius: var(--borda-radius); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 1.3rem; margin: 0; border: none; }
+        .modal-header .close-btn { font-size: 1.5rem; background: none; border: none; cursor: pointer; }
+        .modal-body .form-group { margin-bottom: 15px; }
+        .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        .btn-primary { background-color: var(--cor-primaria); color: #fff; }
+        .btn-danger { background-color: var(--cor-perigo); color: #fff; }
+        .btn-secondary { background-color: #6c757d; color: #fff; }
+        .bottom-actions { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; padding: 15px; text-align: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.07); z-index: 999; }
+        .btn-submit-all { background-color: var(--cor-sucesso); color: #fff; border: none; border-radius: 50px; padding: 15px 25px; font-size: 1.1rem; font-weight: 600; width: 100%; max-width: 400px; }
+        .error-message { color: var(--cor-perigo); font-weight: 500; text-align: center; height: 20px; font-size: 0.9rem; }
+        .autocomplete-container { position: relative; }
+        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #ddd; background-color: #fff; z-index: 2001; max-height: 150px; overflow-y: auto; list-style: none; padding: 0; margin: 0; box-sizing: border-box; border-radius: 8px; }
+        .autocomplete-item { padding: 10px; cursor: pointer; }
+        .autocomplete-item:hover { background-color: #f0f0f0; }
+        #toast-container { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 25px; color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: opacity 0.4s, transform 0.4s; }
+        .toast.success { background-color: var(--cor-sucesso); }
+        .toast.error { background-color: var(--cor-perigo); }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
     </style>
 </head>
 <body>
@@ -73,13 +126,7 @@
     </button>
 </div>
 
-<!-- Tela de "Verificando" (opcional, mas melhora a experiência) -->
-<div id="verifying-container" class="full-page-container">
-    <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--cor-primaria);"></i>
-    <p style="margin-top: 20px;">Verificando autenticação...</p>
-</div>
-
-<!-- Tela de Acesso Negado -->
+<!-- NOVA TELA: Acesso Negado -->
 <div id="access-denied-container" class="full-page-container">
     <i class="fa-solid fa-user-lock fa-3x" style="color: var(--cor-perigo); margin-bottom: 20px;"></i>
     <h1>Acesso Negado</h1>
@@ -88,21 +135,28 @@
     <button class="btn-logout" id="logout-btn-denied">Sair</button>
 </div>
 
-<!-- Aplicação Principal (O conteúdo aqui dentro não muda) -->
+<!-- Aplicação Principal -->
 <div id="app-container">
+    <!-- Header com info do usuário e botão de sair -->
     <div class="user-header">
-        <div class="user-info" id="user-info-display"></div>
+        <div class="user-info" id="user-info-display">Carregando...</div>
         <button class="btn-logout" id="logout-btn">Sair <i class="fa-solid fa-right-from-bracket"></i></button>
     </div>
-    <!-- O resto do seu HTML da aplicação vai aqui -->
+
+    <div class="main-container">
+        <!-- O resto da sua aplicação (header, session-panel, lancamentos-container, etc.) -->
+    </div>
+    
+    <button class="fab" id="fab-add"><i class="fa-solid fa-plus"></i></button>
+    <!-- [SEUS MODAIS AQUI] -->
+    <div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
 </div>
 
 <div id="toast-container"></div>
 
 <script type="module">
-    // ATUALIZADO: signInWithRedirect foi importado em vez de signInWithPopup
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut, getIdToken, signInWithRedirect } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, getIdToken } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDfbqxZETPoNmB-cxNzx5JNp_A2QkCvXVI",
@@ -115,17 +169,19 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzE_KwNKNN7W3uj9g_yqyuM3kv_zxaZvnBLb_ev8mUv45dPdwwarkgMRLQwfduW9N1VRQ/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzliqTuiIqUgSAyLxQ_0q76gFh1Wcaq3sCj8Np0o7MKYdK68efPY7wNblscsA6IkLGxdg/exec';
     
     let appInitialized = false;
 
-    function showToast(message, type = 'success') { /* sua função showToast aqui */ }
+    // ... (O resto do seu código JS, incluindo showToast, initApp, etc. viria aqui. Para abreviar,
+    // estou incluindo apenas a parte que muda, que é o gerenciador de autenticação)
+
+    function showToast(message, type = 'success') { /*...mesma função de antes...*/ }
 
     document.addEventListener('DOMContentLoaded', function () {
         const loginContainer = document.getElementById('login-container');
         const appContainer = document.getElementById('app-container');
         const accessDeniedContainer = document.getElementById('access-denied-container');
-        const verifyingContainer = document.getElementById('verifying-container');
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const logoutBtnDenied = document.getElementById('logout-btn-denied');
@@ -136,65 +192,70 @@
             loginContainer.style.display = 'none';
             appContainer.style.display = 'none';
             accessDeniedContainer.style.display = 'none';
-            verifyingContainer.style.display = 'none';
-            screen.style.display = screen.id.includes('container') ? 'flex' : 'block';
-            if (screen.id === 'app-container') screen.style.display = 'block';
+            screen.style.display = screen.id === 'app-container' ? 'block' : 'flex';
         };
 
-        // ATUALIZADO: A função de login agora usa signInWithRedirect
         const loginWithGoogle = () => {
-            showScreen(verifyingContainer); // Mostra "verificando" para o usuário
             const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider); // Inicia o redirecionamento
+            signInWithPopup(auth, provider).catch(error => {
+                console.error("Erro no login:", error);
+                showToast("Falha no login: " + error.message, 'error');
+            });
         };
 
         const logout = () => {
-            signOut(auth);
+            signOut(auth).then(() => {
+                appInitialized = false; // Permite que o app reinicie no próximo login
+            });
         };
 
         loginBtn.addEventListener('click', loginWithGoogle);
         logoutBtn.addEventListener('click', logout);
         logoutBtnDenied.addEventListener('click', logout);
 
+        // MODIFICADO: Gerenciador de estado de autenticação
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuário está logado (ou acabou de voltar do redirecionamento).
-                // Mostra a tela de verificação enquanto checamos a autorização.
-                showScreen(verifyingContainer);
+                // Usuário fez login. AGORA, vamos verificar a autorização.
                 try {
                     const idToken = await getIdToken(user);
                     const response = await fetch(`${API_URL}?token=${idToken}`);
-                    if (!response.ok) throw new Error('Falha ao conectar com o servidor de autorização.');
                     const data = await response.json();
 
                     if (data.isAuthorized) {
+                        // Autorizado! Mostra o app.
                         showScreen(appContainer);
                         userInfoDisplay.textContent = `Logado como: ${user.email}`;
                         if (!appInitialized) {
-                            initApp();
+                            initApp(); // Inicializa a aplicação principal
                         }
                     } else {
+                        // Não autorizado! Mostra a tela de acesso negado.
                         deniedEmail.textContent = user.email;
                         showScreen(accessDeniedContainer);
                     }
                 } catch (error) {
                     console.error("Erro ao verificar autorização:", error);
-                    showToast(error.message, "error");
-                    // Em caso de erro, desloga o usuário para que ele possa tentar novamente.
-                    logout();
+                    showToast("Erro ao verificar permissão.", "error");
+                    showScreen(accessDeniedContainer); // Mostra acesso negado em caso de erro
                 }
             } else {
-                // Usuário está deslogado.
+                // Usuário está deslogado. Mostra a tela de login.
                 showScreen(loginContainer);
-                appInitialized = false;
             }
         });
         
-        function initApp() {
+        const initApp = () => {
             // [TODO O CÓDIGO DA SUA APLICAÇÃO VEM AQUI DENTRO]
-            // Nenhuma alteração é necessária aqui. O código da sua aplicação
-            // (renderLancamentos, carregarOpcoes, etc.) permanece o mesmo.
+            // (renderLancamentos, toggleModal, enviarPedido, etc.)
+            // Este código é exatamente o mesmo da versão anterior, não precisa mudar nada nele.
+            // Apenas garanta que ele está dentro desta função `initApp`.
             appInitialized = true;
+            // Ex:
+            // const DATA_KEY = '...';
+            // let lancamentos = ...;
+            // renderLancamentos();
+            // carregarOpcoes();
         };
     });
 </script>
