@@ -32,7 +32,6 @@
             color: var(--cor-texto);
             -webkit-tap-highlight-color: transparent;
         }
-        /* CORREÇÃO 2: Aumentado o padding inferior para evitar sobreposição do FAB */
         .main-container { padding: 15px; padding-bottom: 170px; }
         .header { text-align: center; color: var(--cor-primaria-escura); margin-bottom: 20px; }
         .header h1 { margin: 0; font-size: 1.8rem; }
@@ -71,8 +70,13 @@
         .modal-header h2 { font-size: 1.3rem; margin: 0; border: none; }
         .modal-header .close-btn { font-size: 1.5rem; background: none; border: none; cursor: pointer; }
         .modal-body .form-group { margin-bottom: 15px; }
-        .modal-footer { margin-top: 20px; text-align: right; }
-        .btn-salvar { background-color: var(--cor-primaria); color: #fff; padding: 12px 20px; border: none; border-radius: 8px; font-size: 1rem; }
+        .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        .btn-primary { background-color: var(--cor-primaria); color: #fff; }
+        /* NOVO: Estilos para botões do modal de confirmação */
+        .btn-danger { background-color: var(--cor-perigo); color: #fff; }
+        .btn-secondary { background-color: #6c757d; color: #fff; }
+        
         .bottom-actions { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; padding: 15px; text-align: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.07); z-index: 999; }
         .btn-submit-all { background-color: var(--cor-sucesso); color: #fff; border: none; border-radius: 50px; padding: 15px 25px; font-size: 1.1rem; font-weight: 600; width: 100%; max-width: 400px; }
         .error-message { color: var(--cor-perigo); font-weight: 500; text-align: center; height: 20px; font-size: 0.9rem; }
@@ -80,27 +84,8 @@
         .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #ddd; background-color: #fff; z-index: 2001; max-height: 150px; overflow-y: auto; list-style: none; padding: 0; margin: 0; box-sizing: border-box; border-radius: 8px; }
         .autocomplete-item { padding: 10px; cursor: pointer; }
         .autocomplete-item:hover { background-color: #f0f0f0; }
-        #toast-container {
-            position: fixed;
-            bottom: 85px; /* Acima da barra de botões */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .toast {
-            padding: 12px 20px;
-            border-radius: 25px;
-            color: #fff;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.4s, transform 0.4s;
-        }
+        #toast-container { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 25px; color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: opacity 0.4s, transform 0.4s; }
         .toast.success { background-color: var(--cor-sucesso); }
         .toast.error { background-color: var(--cor-perigo); }
         .toast.show { opacity: 1; transform: translateY(0); }
@@ -123,6 +108,7 @@
 
 <button class="fab" id="fab-add"><i class="fa-solid fa-plus"></i></button>
 
+<!-- Modal de Adicionar/Editar -->
 <div class="modal-overlay" id="add-modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -139,33 +125,58 @@
             <div class="form-group"><label for="modal-inseticida">Inseticida (ml)</label><input type="number" id="modal-inseticida" min="0"></div>
             <div class="error-message" id="modal-error"></div>
         </div>
-        <div class="modal-footer"><button class="btn-salvar" id="modal-save-btn">Salvar Lançamento</button></div>
+        <div class="modal-footer"><button class="btn btn-primary" id="modal-save-btn">Salvar Lançamento</button></div>
     </div>
 </div>
 
-<div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
+<!-- NOVO: Modal de Confirmação -->
+<div class="modal-overlay" id="confirm-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="confirm-title">Confirmar Ação</h2>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-message">Você tem certeza?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirm-cancel-btn">Cancelar</button>
+            <button class="btn btn-danger" id="confirm-ok-btn">Sim, remover</button>
+        </div>
+    </div>
+</div>
 
+
+<div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
 <div id="toast-container"></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const DATA_KEY = 'consumo_Lancamentos_v7';
     const SESSION_KEY = 'consumo_Sessao_v7';
+    // Constantes para os elementos da UI
     const lancamentosContainer = document.getElementById('lancamentos-container');
     const fabAdd = document.getElementById('fab-add');
+    const enviarButton = document.getElementById('enviar-button');
+    const sessionError = document.getElementById('session-error');
+    const sessaoDataInput = document.getElementById('sessao-data');
+    const sessaoEquipeSelect = document.getElementById('sessao-equipe');
+    // Constantes para o modal de Adição
     const addModal = document.getElementById('add-modal');
     const modalCloseBtn = document.getElementById('modal-close-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
-    const enviarButton = document.getElementById('enviar-button');
-    const sessionError = document.getElementById('session-error');
     const modalError = document.getElementById('modal-error');
-    const sessaoDataInput = document.getElementById('sessao-data');
-    const sessaoEquipeSelect = document.getElementById('sessao-equipe');
     const modalAplicador = document.getElementById('modal-aplicador');
     const modalAtomizador = document.getElementById('modal-atomizador');
     const modalGasolina = document.getElementById('modal-gasolina');
     const modalInseticida = document.getElementById('modal-inseticida');
     const modalAutocompleteList = document.getElementById('modal-autocomplete-list');
+    
+    // NOVO: Constantes para o modal de Confirmação
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmMessage = document.getElementById('confirm-message');
+    const confirmOkBtn = document.getElementById('confirm-ok-btn');
+    const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+
     let lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
     let allMembros = [];
 
@@ -175,23 +186,41 @@ document.addEventListener('DOMContentLoaded', function () {
         toast.className = `toast ${type}`;
         toast.textContent = message;
         toastContainer.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
-
+        setTimeout(() => toast.classList.add('show'), 100);
         setTimeout(() => {
             toast.classList.remove('show');
             toast.addEventListener('transitionend', () => toast.remove());
         }, 3000);
     }
     
+    // NOVO: Função para exibir o modal de confirmação
+    function showConfirm(message, onConfirm) {
+        confirmMessage.textContent = message;
+        confirmModal.style.display = 'flex';
+        setTimeout(() => confirmModal.classList.add('visible'), 10);
+
+        const hide = () => {
+            confirmModal.classList.remove('visible');
+            setTimeout(() => confirmModal.style.display = 'none', 300);
+            confirmOkBtn.removeEventListener('click', handleOk);
+            confirmCancelBtn.removeEventListener('click', hide);
+        };
+        
+        const handleOk = () => {
+            onConfirm();
+            hide();
+        };
+
+        confirmOkBtn.addEventListener('click', handleOk);
+        confirmCancelBtn.addEventListener('click', hide);
+    }
+
     function renderLancamentos() {
         lancamentosContainer.innerHTML = '';
         if (lancamentos.length === 0) {
             lancamentosContainer.innerHTML = '<p style="text-align:center; color:#6c757d;">Nenhum lançamento ainda. Clique no botão + para começar.</p>';
         }
-        lancamentos.sort((a,b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
+        lancamentos.sort((a, b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
             const card = document.createElement('div');
             card.className = `lancamento-card status-${item.status}`;
             card.dataset.index = index;
@@ -234,11 +263,17 @@ document.addEventListener('DOMContentLoaded', function () {
     fabAdd.addEventListener('click', () => toggleModal(true));
     modalCloseBtn.addEventListener('click', () => toggleModal(false));
     addModal.addEventListener('click', (e) => { if (e.target === addModal) toggleModal(false); });
+
     modalSaveBtn.addEventListener('click', () => {
         modalError.textContent = ''; sessionError.textContent = '';
         const sessaoData = sessaoDataInput.value;
         const sessaoEquipe = sessaoEquipeSelect.value;
-        if (!sessaoData || !sessaoEquipe) { sessionError.textContent = 'Defina a Data e a Equipe principal.'; toggleModal(false); return; }
+        if (!sessaoData || !sessaoEquipe) {
+            sessionError.textContent = 'Defina a Data e a Equipe principal.';
+            showToast('Defina a Data e a Equipe!', 'error');
+            toggleModal(false);
+            return;
+        }
         const aplicador = modalAplicador.value.trim();
         const atomizador = modalAtomizador.value;
         if (!aplicador || !atomizador) { modalError.textContent = 'Aplicador e Atomizador são obrigatórios.'; return; }
@@ -255,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalAtomizador.value = '';
         toggleModal(false);
         renderLancamentos();
+        showToast('Lançamento adicionado!', 'success');
     });
 
     lancamentosContainer.addEventListener('click', (e) => {
@@ -264,21 +300,31 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!cardElement) return;
         const index = cardElement.dataset.index;
         const action = button.dataset.action;
-        if (action === 'complete') lancamentos[index].status = 'ready';
-        if (action === 'edit') lancamentos[index].status = 'pending';
-        if (action === 'delete' && confirm('Remover este lançamento?')) lancamentos.splice(index, 1);
-        renderLancamentos();
+        
+        if (action === 'complete') {
+            lancamentos[index].status = 'ready';
+            renderLancamentos();
+        }
+        if (action === 'edit') {
+            lancamentos[index].status = 'pending';
+            renderLancamentos();
+        }
+        // MODIFICADO: Substituído confirm() pela função showConfirm()
+        if (action === 'delete') {
+            showConfirm('Remover este lançamento permanentemente?', () => {
+                lancamentos.splice(index, 1);
+                renderLancamentos();
+                showToast('Lançamento removido.', 'success');
+            });
+        }
     });
 
-    // CORREÇÃO 1: Trocado 'input' por 'change' para permitir digitação de múltiplos números.
     lancamentosContainer.addEventListener('change', (e) => {
         if (e.target.classList.contains('card-input')) {
             const cardElement = e.target.closest('.lancamento-card');
             if (!cardElement) return;
             const index = cardElement.dataset.index;
             lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
-            
-            // Re-renderiza para atualizar o status do botão "Pronto" se necessário
             renderLancamentos();
         }
     });
@@ -337,12 +383,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 for (const equipe in data.equipes) sessaoEquipeSelect.add(new Option(equipe, equipe));
                 allMembros = [...data.todos_membros].sort();
                 carregarSessao();
-            }).catch(e => console.error("Erro ao carregar equipes:", e));
+            }).catch(e => {
+                console.error("Erro ao carregar equipes:", e);
+                showToast('Erro ao carregar dados.', 'error');
+            });
         fetch('https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec')
             .then(r => r.json()).then(data => {
                 modalAtomizador.innerHTML = '<option value="">Selecione...</option>';
                 data.atomizadores.forEach(a => modalAtomizador.add(new Option(a, a)));
-            }).catch(e => console.error("Erro ao carregar atomizadores:", e));
+            }).catch(e => {
+                console.error("Erro ao carregar atomizadores:", e);
+                showToast('Erro ao carregar dados.', 'error');
+            });
     };
     
     modalAplicador.addEventListener('input', function () {
