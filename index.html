@@ -32,7 +32,8 @@
             color: var(--cor-texto);
             -webkit-tap-highlight-color: transparent;
         }
-        .main-container { padding: 15px; padding-bottom: 100px; }
+        /* CORREÇÃO 2: Aumentado o padding inferior para evitar sobreposição do FAB */
+        .main-container { padding: 15px; padding-bottom: 170px; }
         .header { text-align: center; color: var(--cor-primaria-escura); margin-bottom: 20px; }
         .header h1 { margin: 0; font-size: 1.8rem; }
         .session-panel { background-color: #fff; padding: 20px; border-radius: var(--borda-radius); margin-bottom: 20px; box-shadow: var(--sombra); }
@@ -79,8 +80,6 @@
         .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #ddd; background-color: #fff; z-index: 2001; max-height: 150px; overflow-y: auto; list-style: none; padding: 0; margin: 0; box-sizing: border-box; border-radius: 8px; }
         .autocomplete-item { padding: 10px; cursor: pointer; }
         .autocomplete-item:hover { background-color: #f0f0f0; }
-
-        /* NOVO: Estilos para o Toast */
         #toast-container {
             position: fixed;
             bottom: 85px; /* Acima da barra de botões */
@@ -146,7 +145,6 @@
 
 <div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
 
-<!-- NOVO: Container para as mensagens Toast -->
 <div id="toast-container"></div>
 
 <script>
@@ -171,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
     let allMembros = [];
 
-    // ---- NOVO: Função para exibir Toasts ----
     function showToast(message, type = 'success') {
         const toastContainer = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -179,15 +176,12 @@ document.addEventListener('DOMContentLoaded', function () {
         toast.textContent = message;
         toastContainer.appendChild(toast);
         
-        // Adiciona a classe 'show' para iniciar a animação de entrada
         setTimeout(() => {
             toast.classList.add('show');
         }, 100);
 
-        // Remove o toast após 3 segundos
         setTimeout(() => {
             toast.classList.remove('show');
-            // Remove o elemento do DOM após a animação de saída
             toast.addEventListener('transitionend', () => toast.remove());
         }, 3000);
     }
@@ -266,7 +260,9 @@ document.addEventListener('DOMContentLoaded', function () {
     lancamentosContainer.addEventListener('click', (e) => {
         const button = e.target.closest('button[data-action]');
         if (!button) return;
-        const index = e.target.closest('.lancamento-card').dataset.index;
+        const cardElement = e.target.closest('.lancamento-card');
+        if (!cardElement) return;
+        const index = cardElement.dataset.index;
         const action = button.dataset.action;
         if (action === 'complete') lancamentos[index].status = 'ready';
         if (action === 'edit') lancamentos[index].status = 'pending';
@@ -274,10 +270,15 @@ document.addEventListener('DOMContentLoaded', function () {
         renderLancamentos();
     });
 
-    lancamentosContainer.addEventListener('input', (e) => {
+    // CORREÇÃO 1: Trocado 'input' por 'change' para permitir digitação de múltiplos números.
+    lancamentosContainer.addEventListener('change', (e) => {
         if (e.target.classList.contains('card-input')) {
-            const index = e.target.closest('.lancamento-card').dataset.index;
+            const cardElement = e.target.closest('.lancamento-card');
+            if (!cardElement) return;
+            const index = cardElement.dataset.index;
             lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
+            
+            // Re-renderiza para atualizar o status do botão "Pronto" se necessário
             renderLancamentos();
         }
     });
@@ -312,11 +313,9 @@ document.addEventListener('DOMContentLoaded', function () {
             
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
             renderLancamentos();
-            // MODIFICADO: Substituído alert por showToast
             showToast('Lançamentos enviados com sucesso!', 'success');
 
         } catch(error) {
-            // MODIFICADO: Substituído alert por showToast
             showToast(`Erro ao enviar: ${error.message}`, 'error');
             console.error("Erro no envio:", error);
         } finally {
