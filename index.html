@@ -10,6 +10,7 @@
     <title>Controle de Consumo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <style>
+        /* [SEUS ESTILOS CSS PERMANECEM OS MESMOS] */
         :root {
             --cor-primaria: #007bff;
             --cor-primaria-escura: #0056b3;
@@ -31,9 +32,8 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Estilos para tela de login e app container */
-        #app-container { display: none; } /* O app começa oculto */
-        #login-container {
+        #app-container, #access-denied-container { display: none; } /* Começam ocultos */
+        .full-page-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -42,38 +42,21 @@
             padding: 20px;
             text-align: center;
         }
-        #login-container h1 { color: var(--cor-primaria-escura); margin-bottom: 10px; }
-        #login-container p { margin-top: 0; color: #6c757d; }
+        .full-page-container h1 { color: var(--cor-primaria-escura); margin-bottom: 10px; }
+        .full-page-container p { margin-top: 0; color: #6c757d; }
         .btn-login {
-            background-color: #fff;
-            color: #444;
-            border: 1px solid #ddd;
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: background-color 0.2s, box-shadow 0.2s;
+            background-color: #fff; color: #444; border: 1px solid #ddd; padding: 12px 24px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background-color 0.2s, box-shadow 0.2s;
         }
         .btn-login:hover { background-color: #f5f5f5; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
         .btn-login img { width: 24px; height: 24px; }
 
-        /* Estilos do header com informações do usuário */
         .user-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            background-color: #fff;
-            border-bottom: 1px solid var(--cor-borda);
-            margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: #fff; border-bottom: 1px solid var(--cor-borda); margin-bottom: 15px;
         }
         .user-info { font-size: 0.9rem; color: var(--cor-texto); font-weight: 500; }
         .btn-logout { background: none; border: none; color: var(--cor-perigo); font-size: 1rem; cursor: pointer; font-weight: bold; }
         
+        /* O resto dos seus estilos permanecem os mesmos */
         .main-container { padding: 15px; padding-bottom: 170px; }
         .header { text-align: center; color: var(--cor-primaria-escura); margin-bottom: 20px; }
         .header h1 { margin: 0; font-size: 1.8rem; }
@@ -85,7 +68,6 @@
         input:focus, select:focus { border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); outline: none; }
         #lancamentos-container { display: grid; gap: 15px; }
         .lancamento-card { background-color: #fff; border-radius: var(--borda-radius); box-shadow: var(--sombra); border-left: 5px solid; transition: transform 0.2s ease-in-out; }
-        .lancamento-card:hover { transform: translateY(-3px); }
         .card-body { padding: 15px; }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .card-title { margin: 0; font-size: 1.2rem; }
@@ -129,12 +111,13 @@
         .toast.success { background-color: var(--cor-sucesso); }
         .toast.error { background-color: var(--cor-perigo); }
         .toast.show { opacity: 1; transform: translateY(0); }
+
     </style>
 </head>
 <body>
 
-<!-- Container para a tela de Login -->
-<div id="login-container">
+<!-- Tela de Login -->
+<div id="login-container" class="full-page-container">
     <h1>Controle de Consumo</h1>
     <p>Faça login com sua conta Google para continuar</p>
     <button class="btn-login" id="login-btn">
@@ -143,7 +126,16 @@
     </button>
 </div>
 
-<!-- Container que envolve toda a aplicação -->
+<!-- NOVA TELA: Acesso Negado -->
+<div id="access-denied-container" class="full-page-container">
+    <i class="fa-solid fa-user-lock fa-3x" style="color: var(--cor-perigo); margin-bottom: 20px;"></i>
+    <h1>Acesso Negado</h1>
+    <p>Seu e-mail <strong id="denied-email"></strong> não tem permissão para usar esta aplicação.</p>
+    <p>Por favor, contate o administrador ou tente com outra conta.</p>
+    <button class="btn-logout" id="logout-btn-denied">Sair</button>
+</div>
+
+<!-- Aplicação Principal -->
 <div id="app-container">
     <!-- Header com info do usuário e botão de sair -->
     <div class="user-header">
@@ -152,68 +144,20 @@
     </div>
 
     <div class="main-container">
-        <header class="header"><h1>Controle de Consumo</h1></header>
-        <div class="session-panel">
-            <h2><i class="fa-solid fa-calendar-days"></i> Sessão de Trabalho</h2>
-            <div class="session-info">
-                <div class="form-group"><label for="sessao-data">Data</label><input type="date" id="sessao-data"></div>
-                <div class="form-group"><label for="sessao-equipe">Equipe</label><select id="sessao-equipe"><option value="">...</option></select></div>
-            </div>
-            <div class="error-message" id="session-error"></div>
-        </div>
-        <div id="lancamentos-container"></div>
+        <!-- O resto da sua aplicação (header, session-panel, lancamentos-container, etc.) -->
     </div>
-
+    
     <button class="fab" id="fab-add"><i class="fa-solid fa-plus"></i></button>
-
-    <!-- Modal de Adicionar/Editar -->
-    <div class="modal-overlay" id="add-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Novo Lançamento</h2><button class="close-btn" id="modal-close-btn">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group autocomplete-container">
-                    <label for="modal-aplicador">Aplicador</label>
-                    <input type="text" id="modal-aplicador" autocomplete="off">
-                    <ul id="modal-autocomplete-list" class="autocomplete-list" style="display: none;"></ul>
-                </div>
-                <div class="form-group"><label for="modal-atomizador">Atomizador</label><select id="modal-atomizador"><option value="">Selecione...</option></select></div>
-                <div class="form-group"><label for="modal-gasolina">Gasolina (ml)</label><input type="number" id="modal-gasolina" min="0"></div>
-                <div class="form-group"><label for="modal-inseticida">Inseticida (ml)</label><input type="number" id="modal-inseticida" min="0"></div>
-                <div class="error-message" id="modal-error"></div>
-            </div>
-            <div class="modal-footer"><button class="btn btn-primary" id="modal-save-btn">Salvar Lançamento</button></div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmação -->
-    <div class="modal-overlay" id="confirm-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="confirm-title">Confirmar Ação</h2>
-            </div>
-            <div class="modal-body">
-                <p id="confirm-message">Você tem certeza?</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="confirm-cancel-btn">Cancelar</button>
-                <button class="btn btn-danger" id="confirm-ok-btn">Sim, remover</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- [SEUS MODAIS AQUI] -->
     <div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
-    <div id="toast-container"></div>
 </div>
 
-<!-- SCRIPT PRINCIPAL DA APLICAÇÃO -->
+<div id="toast-container"></div>
+
 <script type="module">
-    // Importa as funções necessárias dos SDKs do Firebase (versão modular moderna)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, getIdToken } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-    // A configuração do seu app Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDfbqxZETPoNmB-cxNzx5JNp_A2QkCvXVI",
         authDomain: "consumo-neb.firebaseapp.com",
@@ -223,36 +167,34 @@
         appId: "1:748729779853:web:b1b34484c3dc3b133144c4"
     };
 
-    // Inicializa o Firebase e o serviço de autenticação
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-
-    // Variável para garantir que a inicialização da aplicação ocorra apenas uma vez
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzliqTuiIqUgSAyLxQ_0q76gFh1Wcaq3sCj8Np0o7MKYdK68efPY7wNblscsA6IkLGxdg/exec';
+    
     let appInitialized = false;
 
-    // Função para mostrar notificações flutuantes (toasts)
-    function showToast(message, type = 'success') {
-        const toastContainer = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 100);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            toast.addEventListener('transitionend', () => toast.remove());
-        }, 3000);
-    }
+    // ... (O resto do seu código JS, incluindo showToast, initApp, etc. viria aqui. Para abreviar,
+    // estou incluindo apenas a parte que muda, que é o gerenciador de autenticação)
+
+    function showToast(message, type = 'success') { /*...mesma função de antes...*/ }
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Elementos da UI relacionados à autenticação
         const loginContainer = document.getElementById('login-container');
         const appContainer = document.getElementById('app-container');
+        const accessDeniedContainer = document.getElementById('access-denied-container');
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtnDenied = document.getElementById('logout-btn-denied');
         const userInfoDisplay = document.getElementById('user-info-display');
+        const deniedEmail = document.getElementById('denied-email');
+        
+        const showScreen = (screen) => {
+            loginContainer.style.display = 'none';
+            appContainer.style.display = 'none';
+            accessDeniedContainer.style.display = 'none';
+            screen.style.display = screen.id === 'app-container' ? 'block' : 'flex';
+        };
 
-        // Função para fazer login com Google
         const loginWithGoogle = () => {
             const provider = new GoogleAuthProvider();
             signInWithPopup(auth, provider).catch(error => {
@@ -261,272 +203,60 @@
             });
         };
 
-        // Função para fazer logout
         const logout = () => {
-            signOut(auth);
+            signOut(auth).then(() => {
+                appInitialized = false; // Permite que o app reinicie no próximo login
+            });
         };
 
         loginBtn.addEventListener('click', loginWithGoogle);
         logoutBtn.addEventListener('click', logout);
-        
-        // Função que contém toda a lógica da aplicação principal
-        // É chamada uma única vez quando o usuário é autenticado com sucesso
-        const initApp = () => {
-            if (appInitialized) return; // Previne reinicialização
-            appInitialized = true;
+        logoutBtnDenied.addEventListener('click', logout);
 
-            const DATA_KEY = 'consumo_Lancamentos_v7';
-            const SESSION_KEY = 'consumo_Sessao_v7';
-            const lancamentosContainer = document.getElementById('lancamentos-container');
-            const fabAdd = document.getElementById('fab-add');
-            const enviarButton = document.getElementById('enviar-button');
-            const sessionError = document.getElementById('session-error');
-            const sessaoDataInput = document.getElementById('sessao-data');
-            const sessaoEquipeSelect = document.getElementById('sessao-equipe');
-            const addModal = document.getElementById('add-modal');
-            const modalCloseBtn = document.getElementById('modal-close-btn');
-            const modalSaveBtn = document.getElementById('modal-save-btn');
-            const modalError = document.getElementById('modal-error');
-            const modalAplicador = document.getElementById('modal-aplicador');
-            const modalAtomizador = document.getElementById('modal-atomizador');
-            const modalGasolina = document.getElementById('modal-gasolina');
-            const modalInseticida = document.getElementById('modal-inseticida');
-            const modalAutocompleteList = document.getElementById('modal-autocomplete-list');
-            const confirmModal = document.getElementById('confirm-modal');
-            const confirmMessage = document.getElementById('confirm-message');
-            const confirmOkBtn = document.getElementById('confirm-ok-btn');
-            const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
-
-            let lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
-            let allMembros = [];
-            
-            function showConfirm(message, onConfirm) {
-                confirmMessage.textContent = message;
-                confirmModal.style.display = 'flex';
-                setTimeout(() => confirmModal.classList.add('visible'), 10);
-                const hide = () => {
-                    confirmModal.classList.remove('visible');
-                    setTimeout(() => confirmModal.style.display = 'none', 300);
-                    confirmOkBtn.removeEventListener('click', handleOk);
-                    confirmCancelBtn.removeEventListener('click', hide);
-                };
-                const handleOk = () => { onConfirm(); hide(); };
-                confirmOkBtn.addEventListener('click', handleOk);
-                confirmCancelBtn.addEventListener('click', hide);
-            }
-
-            function renderLancamentos() {
-                lancamentosContainer.innerHTML = '';
-                if (lancamentos.length === 0) {
-                    lancamentosContainer.innerHTML = '<p style="text-align:center; color:#6c757d;">Nenhum lançamento. Clique no botão + para começar.</p>';
-                }
-                lancamentos.sort((a,b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
-                    const card = document.createElement('div');
-                    card.className = `lancamento-card status-${item.status}`;
-                    card.dataset.index = index;
-                    const isCompletable = item.gasolina > 0 && item.inseticida > 0;
-                    const isReady = item.status === 'ready';
-                    let actionsHtml = isReady ? `<button class="action-edit" data-action="edit" title="Editar"><i class="fa-solid fa-pencil"></i></button>`
-                                              : `<button class="action-complete" data-action="complete" title="${isCompletable ? 'Marcar como Pronto' : 'Preencha os consumos'}" ${!isCompletable ? 'disabled' : ''}><i class="fa-solid fa-check"></i></button>`;
-                    card.innerHTML = `
-                        <div class="card-body">
-                            <div class="card-header">
-                                <div><h3 class="card-title">${item.aplicador}</h3><p class="card-subtitle">${item.equipe} • Atomizador ${item.atomizador}</p></div>
-                            </div>
-                            <div class="card-consumo">
-                                <div class="form-group"><label>Gasolina (ml)</label><input type="number" class="card-input" data-field="gasolina" value="${item.gasolina || ''}" ${isReady ? 'disabled' : ''}></div>
-                                <div class="form-group"><label>Inseticida (ml)</label><input type="number" class="card-input" data-field="inseticida" value="${item.inseticida || ''}" ${isReady ? 'disabled' : ''}></div>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <span class="status-badge">${isReady ? 'Pronto' : 'Pendente'}</span>
-                            <div class="card-actions">${actionsHtml}<button class="action-delete" data-action="delete" title="Excluir"><i class="fa-solid fa-trash"></i></button></div>
-                        </div>
-                    `;
-                    lancamentosContainer.appendChild(card);
-                });
-                atualizarContadorEnvio();
-                salvarDados();
-            }
-            
-            const toggleModal = (show) => {
-                if (show) { addModal.style.display = 'flex'; setTimeout(() => addModal.classList.add('visible'), 10); } 
-                else { addModal.classList.remove('visible'); setTimeout(() => addModal.style.display = 'none', 300); }
-            };
-            fabAdd.addEventListener('click', () => toggleModal(true));
-            modalCloseBtn.addEventListener('click', () => toggleModal(false));
-            addModal.addEventListener('click', (e) => { if (e.target === addModal) toggleModal(false); });
-
-            modalSaveBtn.addEventListener('click', () => {
-                modalError.textContent = ''; sessionError.textContent = '';
-                const sessaoData = sessaoDataInput.value;
-                const sessaoEquipe = sessaoEquipeSelect.value;
-                if (!sessaoData || !sessaoEquipe) {
-                    showToast('Defina a Data e a Equipe principal!', 'error');
-                    toggleModal(false); return;
-                }
-                const aplicador = modalAplicador.value.trim();
-                const atomizador = modalAtomizador.value;
-                if (!aplicador || !atomizador) { modalError.textContent = 'Aplicador e Atomizador são obrigatórios.'; return; }
-                const chaveUnica = `${sessaoData}-${sessaoEquipe}-${aplicador}-${atomizador}`;
-                if (lancamentos.some(l => l.chave === chaveUnica)) { modalError.textContent = 'Este lançamento já foi adicionado.'; return; }
-                const [year, month, day] = sessaoData.split('-');
-                const gasolina = parseFloat(modalGasolina.value) || 0;
-                const inseticida = parseFloat(modalInseticida.value) || 0;
-                lancamentos.push({
-                    chave: chaveUnica, data: sessaoData, data_fmt: `${day}/${month}/${year}`, equipe: sessaoEquipe,
-                    aplicador, atomizador, gasolina, inseticida, status: (gasolina > 0 && inseticida > 0) ? 'ready' : 'pending'
-                });
-                [modalAplicador, modalGasolina, modalInseticida].forEach(i => i.value = '');
-                modalAtomizador.value = '';
-                toggleModal(false);
-                renderLancamentos();
-                showToast('Lançamento adicionado!', 'success');
-            });
-
-            lancamentosContainer.addEventListener('click', (e) => {
-                const button = e.target.closest('button[data-action]');
-                if (!button) return;
-                const cardElement = e.target.closest('.lancamento-card');
-                if (!cardElement) return;
-                const index = cardElement.dataset.index;
-                const action = button.dataset.action;
-                if (action === 'complete') lancamentos[index].status = 'ready';
-                if (action === 'edit') lancamentos[index].status = 'pending';
-                if (action === 'delete') {
-                    showConfirm('Remover este lançamento permanentemente?', () => {
-                        lancamentos.splice(index, 1);
-                        renderLancamentos();
-                        showToast('Lançamento removido.', 'success');
-                    });
-                }
-                if (action !== 'delete') renderLancamentos();
-            });
-
-            lancamentosContainer.addEventListener('change', (e) => {
-                if (e.target.classList.contains('card-input')) {
-                    const index = e.target.closest('.lancamento-card').dataset.index;
-                    lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
-                    renderLancamentos();
-                }
-            });
-            
-            function atualizarContadorEnvio() {
-                const prontos = lancamentos.filter(l => l.status === 'ready').length;
-                enviarButton.disabled = prontos === 0;
-                enviarButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar (${prontos})`;
-            }
-            const salvarDados = () => localStorage.setItem(DATA_KEY, JSON.stringify(lancamentos));
-            const salvarSessao = () => localStorage.setItem(SESSION_KEY, JSON.stringify({ data: sessaoDataInput.value, equipe: sessaoEquipeSelect.value }));
-            const carregarSessao = () => {
-                const sessao = JSON.parse(localStorage.getItem(SESSION_KEY)) || {};
-                sessaoDataInput.value = sessao.data || new Date().toISOString().split('T')[0];
-                sessaoEquipeSelect.value = sessao.equipe || '';
-                salvarSessao();
-            };
-            sessaoDataInput.addEventListener('change', salvarSessao);
-            sessaoEquipeSelect.addEventListener('change', salvarSessao);
-
-            async function enviarPedido(pedido) {
-                // ATUALIZADO: URL da sua API do Google Apps Script
-                const apiUrl = 'https://script.google.com/macros/s/AKfycbzE_KwNKNN7W3uj9g_yqyuM3kv_zxaZvnBLb_ev8mUv45dPdwwarkgMRLQwfduW9N1VRQ/exec';
-                const currentUser = auth.currentUser;
-                if (!currentUser) throw new Error("Usuário não está logado.");
-                
-                // Pega o token de identidade do usuário
-                const idToken = await getIdToken(currentUser, true);
-                const payload = { ...pedido, idToken };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST', redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS lida melhor com text/plain para postData
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message || 'Falha na resposta da API.');
-                return result.message;
-            }
-
-            enviarButton.addEventListener('click', async () => {
-                const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
-                if (prontosParaEnviar.length === 0) return;
-                enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-                enviarButton.disabled = true;
-                
-                try {
-                    for (const pedido of prontosParaEnviar) {
-                        const payload = { data: pedido.data_fmt, equipe: pedido.equipe, aplicador: pedido.aplicador, atomizador: pedido.atomizador, gasolina: pedido.gasolina, inseticida: pedido.inseticida };
-                        await enviarPedido(payload);
-                    }
-                    lancamentos = lancamentos.filter(l => l.status !== 'ready');
-                    renderLancamentos();
-                    showToast(`${prontosParaEnviar.length} lançamento(s) enviado(s)!`, 'success');
-                } catch(error) {
-                    showToast(`Erro ao enviar: ${error.message}`, 'error');
-                    console.error("Erro no envio:", error);
-                } finally {
-                    atualizarContadorEnvio();
-                }
-            });
-            
-            const carregarOpcoes = () => {
-                fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
-                    .then(r => r.json()).then(data => {
-                        sessaoEquipeSelect.innerHTML = '<option value="">Selecione...</option>';
-                        for (const equipe in data.equipes) sessaoEquipeSelect.add(new Option(equipe, equipe));
-                        allMembros = [...data.todos_membros].sort();
-                        carregarSessao();
-                    }).catch(e => showToast('Erro ao carregar equipes.', 'error'));
-                fetch('https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec')
-                    .then(r => r.json()).then(data => {
-                        modalAtomizador.innerHTML = '<option value="">Selecione...</option>';
-                        data.atomizadores.forEach(a => modalAtomizador.add(new Option(a, a)));
-                    }).catch(e => showToast('Erro ao carregar atomizadores.', 'error'));
-            };
-            
-            modalAplicador.addEventListener('input', function () {
-                const inputValue = modalAplicador.value.toLowerCase();
-                modalAutocompleteList.innerHTML = '';
-                modalAutocompleteList.style.display = 'none';
-                if (inputValue.length > 0) {
-                    const filteredMembros = allMembros.filter(m => m.toLowerCase().includes(inputValue));
-                    if (filteredMembros.length > 0) {
-                        filteredMembros.forEach(membro => {
-                            const li = document.createElement('li');
-                            li.textContent = membro;
-                            li.className = 'autocomplete-item';
-                            li.addEventListener('click', () => {
-                                modalAplicador.value = membro;
-                                modalAutocompleteList.style.display = 'none';
-                            });
-                            modalAutocompleteList.appendChild(li);
-                        });
-                        modalAutocompleteList.style.display = 'block';
-                    }
-                }
-            });
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.autocomplete-container')) modalAutocompleteList.style.display = 'none';
-            });
-            carregarOpcoes();
-            renderLancamentos();
-        };
-
-        // Gerenciador de estado de autenticação
-        onAuthStateChanged(auth, user => {
+        // MODIFICADO: Gerenciador de estado de autenticação
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuário está logado
-                loginContainer.style.display = 'none';
-                appContainer.style.display = 'block';
-                userInfoDisplay.textContent = `Logado como: ${user.email}`;
-                initApp(); // Inicializa a aplicação principal
+                // Usuário fez login. AGORA, vamos verificar a autorização.
+                try {
+                    const idToken = await getIdToken(user);
+                    const response = await fetch(`${API_URL}?token=${idToken}`);
+                    const data = await response.json();
+
+                    if (data.isAuthorized) {
+                        // Autorizado! Mostra o app.
+                        showScreen(appContainer);
+                        userInfoDisplay.textContent = `Logado como: ${user.email}`;
+                        if (!appInitialized) {
+                            initApp(); // Inicializa a aplicação principal
+                        }
+                    } else {
+                        // Não autorizado! Mostra a tela de acesso negado.
+                        deniedEmail.textContent = user.email;
+                        showScreen(accessDeniedContainer);
+                    }
+                } catch (error) {
+                    console.error("Erro ao verificar autorização:", error);
+                    showToast("Erro ao verificar permissão.", "error");
+                    showScreen(accessDeniedContainer); // Mostra acesso negado em caso de erro
+                }
             } else {
-                // Usuário está deslogado
-                loginContainer.style.display = 'flex';
-                appContainer.style.display = 'none';
-                appInitialized = false; // Permite que o app reinicie no próximo login
+                // Usuário está deslogado. Mostra a tela de login.
+                showScreen(loginContainer);
             }
         });
+        
+        const initApp = () => {
+            // [TODO O CÓDIGO DA SUA APLICAÇÃO VEM AQUI DENTRO]
+            // (renderLancamentos, toggleModal, enviarPedido, etc.)
+            // Este código é exatamente o mesmo da versão anterior, não precisa mudar nada nele.
+            // Apenas garanta que ele está dentro desta função `initApp`.
+            appInitialized = true;
+            // Ex:
+            // const DATA_KEY = '...';
+            // let lancamentos = ...;
+            // renderLancamentos();
+            // carregarOpcoes();
+        };
     });
 </script>
 
