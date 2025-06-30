@@ -208,7 +208,7 @@
 
 <script>
 // SUAS CREDENCIAIS DO FIREBASE
-// Substitua pela NOVA apiKey que você regenerou por segurança!
+// Lembre-se de regenerar sua apiKey por segurança!
 const firebaseConfig = {
     apiKey: "AIzaSyDfbqxZETPoNmB-cxNzx5JNp_A2QkCvXVI",
     authDomain: "consumo-neb.firebaseapp.com",
@@ -284,7 +284,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const creationTime = new Date(user.metadata.creationTime).getTime();
             const lastSignInTime = new Date(user.metadata.lastSignInTime).getTime();
             
-            if (lastSignInTime - creationTime < 10000) { // Margem de 10s para primeiro acesso
+            // CORREÇÃO: Lógica para forçar a troca de senha no primeiro acesso
+            if (lastSignInTime - creationTime < 10000) { // Margem de 10s 
                 authContainer.style.display = 'block';
                 appContainer.classList.remove('visible');
                 showAuthView('change-password-view');
@@ -368,7 +369,8 @@ document.addEventListener('DOMContentLoaded', function () {
         user.updatePassword(newPassword)
             .then(() => {
                 showToast('Senha alterada! Faça login com a nova senha.', 'success');
-                auth.signOut();
+                // CORREÇÃO: Força o logout para o usuário fazer novo login e atualizar o lastSignInTime
+                auth.signOut(); 
             })
             .catch(error => {
                 errorDiv.textContent = 'Erro ao alterar a senha.';
@@ -540,7 +542,9 @@ document.addEventListener('DOMContentLoaded', function () {
         
         try {
             for (const pedido of prontosParaEnviar) {
+                // Adiciona o email do usuário ao payload de envio
                 const payload = { ...pedido, usuarioLogado: currentUser.email };
+                delete payload.chave; // Remove a chave interna antes de enviar
                 await enviarPedido(payload);
             }
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
@@ -555,7 +559,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     async function enviarPedido(pedido) {
-        const apiUrl = 'https://script.google.com/macros/s/AKfycbzSM5A4hWHs-c5yIofhDsb846zoyCs-pahkTk7WJzMXetyC_LKkl79BOy22En3YQKjQmg/exec'; // URL do seu Google Apps Script
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbwoQBltuMUVyyHCHLS2zomqEq0OBf50_jPwtaFqEhpFbSIosTbfbNu3fxs3S6AmYSVZTg/exec'; // URL do seu Google Apps Script
         const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
         if (!response.ok) throw new Error('Falha na resposta da API.');
         return response.text();
