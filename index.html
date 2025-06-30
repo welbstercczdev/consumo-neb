@@ -44,7 +44,6 @@
         input:focus, select:focus { border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); outline: none; }
         #lancamentos-container { display: grid; gap: 15px; }
         .lancamento-card { background-color: #fff; border-radius: var(--borda-radius); box-shadow: var(--sombra); border-left: 5px solid; transition: transform 0.2s ease-in-out; }
-        .lancamento-card:hover { transform: translateY(-3px); }
         .card-body { padding: 15px; }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .card-title { margin: 0; font-size: 1.2rem; }
@@ -87,8 +86,6 @@
         .toast.success { background-color: var(--cor-sucesso); }
         .toast.error { background-color: var(--cor-perigo); }
         .toast.show { opacity: 1; transform: translateY(0); }
-
-        /* Estilos para autenticação e controle de visibilidade */
         .auth-container { width: 100%; max-width: 400px; margin: 40px auto; padding: 20px; }
         .auth-view { display: none; }
         .auth-view.visible { display: block; }
@@ -96,7 +93,9 @@
         #app-view-container.visible { display: block; }
         .form-link { display: block; text-align: right; margin-top: 10px; color: var(--cor-primaria); font-size: 0.9rem; cursor: pointer; }
         .header-user { font-size: 0.9rem; color: #6c757d; display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 5px; margin-bottom: -10px; }
-        .header-user #logout-btn { cursor: pointer; color: var(--cor-perigo); font-size: 1.2rem; }
+        .header-user i { cursor: pointer; font-size: 1.2rem; }
+        .header-user #change-password-main-btn { color: var(--cor-primaria-escura); }
+        .header-user #logout-btn { color: var(--cor-perigo); }
     </style>
 </head>
 <body>
@@ -147,6 +146,7 @@
             <h1>Controle de Consumo</h1>
             <div class="header-user">
                 <span id="user-email-display"></span>
+                <i class="fa-solid fa-key" id="change-password-main-btn" title="Alterar Senha"></i>
                 <i class="fa-solid fa-right-from-bracket" id="logout-btn" title="Sair"></i>
             </div>
         </header>
@@ -167,7 +167,7 @@
     <div class="modal-overlay" id="add-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Novo Lançamento</h2><button class="close-btn" id="modal-close-btn">×</button>
+                <h2>Novo Lançamento</h2><button class="close-btn" data-modal-id="add-modal">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group autocomplete-container">
@@ -180,7 +180,10 @@
                 <div class="form-group"><label for="modal-inseticida">Inseticida (ml)</label><input type="number" id="modal-inseticida" min="0"></div>
                 <div class="error-message" id="modal-error"></div>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" id="modal-save-btn">Salvar Lançamento</button></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-btn" data-modal-id="add-modal">Cancelar</button>
+                <button class="btn btn-primary" id="modal-save-btn">Salvar Lançamento</button>
+            </div>
         </div>
     </div>
 
@@ -192,6 +195,35 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="confirm-cancel-btn">Cancelar</button>
                 <button class="btn btn-danger" id="confirm-ok-btn">Sim, remover</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para alterar senha do usuário logado -->
+    <div class="modal-overlay" id="manage-password-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Alterar Minha Senha</h2>
+                <button class="close-btn" data-modal-id="manage-password-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="current-password">Senha Atual</label>
+                    <input type="password" id="current-password" autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                    <label for="manage-new-password">Nova Senha</label>
+                    <input type="password" id="manage-new-password" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-new-password">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-new-password" autocomplete="new-password">
+                </div>
+                <div class="error-message" id="manage-password-error"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-btn" data-modal-id="manage-password-modal">Cancelar</button>
+                <button class="btn btn-primary" id="save-new-password-btn">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -208,7 +240,7 @@
 
 <script>
 // SUAS CREDENCIAIS DO FIREBASE
-// Lembre-se de regenerar sua apiKey por segurança!
+// Substitua pela NOVA apiKey que você regenerou por segurança!
 const firebaseConfig = {
     apiKey: "AIzaSyDfbqxZETPoNmB-cxNzx5JNp_A2QkCvXVI",
     authDomain: "consumo-neb.firebaseapp.com",
@@ -224,8 +256,8 @@ const auth = firebase.auth();
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    const DATA_KEY_PREFIX = 'consumo_Lancamentos_v8_';
-    const SESSION_KEY_PREFIX = 'consumo_Sessao_v8_';
+    const DATA_KEY_PREFIX = 'consumo_Lancamentos_v9_';
+    const SESSION_KEY_PREFIX = 'consumo_Sessao_v9_';
     let DATA_KEY = '';
     let SESSION_KEY = '';
     let lancamentos = [];
@@ -235,9 +267,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Autenticação
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-view-container');
-    const loginView = document.getElementById('login-view');
-    const forgotPasswordView = document.getElementById('forgot-password-view');
-    const changePasswordView = document.getElementById('change-password-view');
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userEmailDisplay = document.getElementById('user-email-display');
@@ -245,6 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const gotoLoginBtn = document.getElementById('goto-login');
     const sendResetBtn = document.getElementById('send-reset-btn');
     const changePasswordBtn = document.getElementById('change-password-btn');
+    const changePasswordMainBtn = document.getElementById('change-password-main-btn');
 
     // Aplicação Principal
     const lancamentosContainer = document.getElementById('lancamentos-container');
@@ -255,8 +285,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const sessaoEquipeSelect = document.getElementById('sessao-equipe');
     
     // Modal de Adição
-    const addModal = document.getElementById('add-modal');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
     const modalError = document.getElementById('modal-error');
     const modalAplicador = document.getElementById('modal-aplicador');
@@ -271,6 +299,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmOkBtn = document.getElementById('confirm-ok-btn');
     const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
 
+    // Modal de Alteração de Senha (Logado)
+    const managePasswordModal = document.getElementById('manage-password-modal');
+    const saveNewPasswordBtn = document.getElementById('save-new-password-btn');
+    const managePasswordError = document.getElementById('manage-password-error');
+
     
     // --- LÓGICA DE AUTENTICAÇÃO ---
 
@@ -284,8 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const creationTime = new Date(user.metadata.creationTime).getTime();
             const lastSignInTime = new Date(user.metadata.lastSignInTime).getTime();
             
-            // CORREÇÃO: Lógica para forçar a troca de senha no primeiro acesso
-            if (lastSignInTime - creationTime < 10000) { // Margem de 10s 
+            if (lastSignInTime - creationTime < 10000) { // Margem de 10s para primeiro acesso
                 authContainer.style.display = 'block';
                 appContainer.classList.remove('visible');
                 showAuthView('change-password-view');
@@ -330,10 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut();
-    });
-
+    logoutBtn.addEventListener('click', () => auth.signOut());
     gotoForgotPasswordBtn.addEventListener('click', () => showAuthView('forgot-password-view'));
     gotoLoginBtn.addEventListener('click', () => showAuthView('login-view'));
 
@@ -369,8 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
         user.updatePassword(newPassword)
             .then(() => {
                 showToast('Senha alterada! Faça login com a nova senha.', 'success');
-                // CORREÇÃO: Força o logout para o usuário fazer novo login e atualizar o lastSignInTime
-                auth.signOut(); 
+                auth.signOut();
             })
             .catch(error => {
                 errorDiv.textContent = 'Erro ao alterar a senha.';
@@ -379,6 +407,36 @@ document.addEventListener('DOMContentLoaded', function () {
             .finally(() => changePasswordBtn.disabled = false);
     });
 
+    saveNewPasswordBtn.addEventListener('click', async () => {
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('manage-new-password').value;
+        const confirmPassword = document.getElementById('confirm-new-password').value;
+        managePasswordError.textContent = '';
+
+        if (!currentPassword || !newPassword || !confirmPassword) { managePasswordError.textContent = 'Todos os campos são obrigatórios.'; return; }
+        if (newPassword.length < 6) { managePasswordError.textContent = 'A nova senha deve ter no mínimo 6 caracteres.'; return; }
+        if (newPassword !== confirmPassword) { managePasswordError.textContent = 'As novas senhas não coincidem.'; return; }
+
+        const user = auth.currentUser;
+        if (!user) { showToast('Sessão inválida. Faça login novamente.', 'error'); return; }
+
+        saveNewPasswordBtn.disabled = true;
+        saveNewPasswordBtn.textContent = 'Salvando...';
+
+        try {
+            const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(newPassword);
+            showToast('Senha alterada com sucesso!', 'success');
+            toggleGenericModal('manage-password-modal', false);
+        } catch (error) {
+            console.error("Erro ao alterar senha:", error);
+            managePasswordError.textContent = error.code === 'auth/wrong-password' ? 'A senha atual está incorreta.' : 'Ocorreu um erro. Tente novamente.';
+        } finally {
+            saveNewPasswordBtn.disabled = false;
+            saveNewPasswordBtn.textContent = 'Salvar Alterações';
+        }
+    });
 
     // --- FUNÇÕES DA APLICAÇÃO ---
 
@@ -410,6 +468,35 @@ document.addEventListener('DOMContentLoaded', function () {
         confirmOkBtn.addEventListener('click', handleOk);
         confirmCancelBtn.addEventListener('click', hide);
     }
+
+    const toggleGenericModal = (modalId, show) => {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const hide = () => {
+            modal.classList.remove('visible');
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
+        };
+
+        if (show) {
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+            // Adiciona listeners de fechamento
+            modal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hide, { once: true }));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) hide();
+            }, { once: true });
+        } else {
+            hide();
+        }
+    };
+    
+    fabAdd.addEventListener('click', () => toggleGenericModal('add-modal', true));
+    changePasswordMainBtn.addEventListener('click', () => {
+        managePasswordModal.querySelectorAll('input').forEach(input => input.value = '');
+        managePasswordError.textContent = '';
+        toggleGenericModal('manage-password-modal', true);
+    });
 
     function renderLancamentos() {
         lancamentosContainer.innerHTML = '';
@@ -449,23 +536,11 @@ document.addEventListener('DOMContentLoaded', function () {
         salvarDados();
     }
     
-    const toggleModal = (show) => {
-        if (show) { addModal.style.display = 'flex'; setTimeout(() => addModal.classList.add('visible'), 10); } 
-        else { addModal.classList.remove('visible'); setTimeout(() => addModal.style.display = 'none', 300); }
-    };
-    fabAdd.addEventListener('click', () => toggleModal(true));
-    modalCloseBtn.addEventListener('click', () => toggleModal(false));
-    addModal.addEventListener('click', (e) => { if (e.target === addModal) toggleModal(false); });
-
     modalSaveBtn.addEventListener('click', () => {
         modalError.textContent = ''; sessionError.textContent = '';
         const sessaoData = sessaoDataInput.value;
         const sessaoEquipe = sessaoEquipeSelect.value;
-        if (!sessaoData || !sessaoEquipe) {
-            showToast('Defina a Data e a Equipe principal!', 'error');
-            toggleModal(false);
-            return;
-        }
+        if (!sessaoData || !sessaoEquipe) { showToast('Defina a Data e a Equipe principal!', 'error'); return; }
         const aplicador = modalAplicador.value.trim();
         const atomizador = modalAtomizador.value;
         if (!aplicador || !atomizador) { modalError.textContent = 'Aplicador e Atomizador são obrigatórios.'; return; }
@@ -480,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         [modalAplicador, modalGasolina, modalInseticida].forEach(i => i.value = '');
         modalAtomizador.value = '';
-        toggleModal(false);
+        toggleGenericModal('add-modal', false);
         renderLancamentos();
         showToast('Lançamento adicionado!', 'success');
     });
@@ -489,25 +564,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const button = e.target.closest('button[data-action]');
         if (!button) return;
         const cardElement = e.target.closest('.lancamento-card');
-        if (!cardElement) return;
         const index = cardElement.dataset.index;
         const action = button.dataset.action;
         
-        if (action === 'complete') { lancamentos[index].status = 'ready'; renderLancamentos(); }
-        if (action === 'edit') { lancamentos[index].status = 'pending'; renderLancamentos(); }
+        if (action === 'complete') { lancamentos[index].status = 'ready'; }
+        if (action === 'edit') { lancamentos[index].status = 'pending'; }
         if (action === 'delete') {
             showConfirm('Remover este lançamento permanentemente?', () => {
                 lancamentos.splice(index, 1);
                 renderLancamentos();
                 showToast('Lançamento removido.', 'success');
             });
+            return; // Evita re-renderização desnecessária
         }
+        renderLancamentos();
     });
 
     lancamentosContainer.addEventListener('change', (e) => {
         if (e.target.classList.contains('card-input')) {
             const cardElement = e.target.closest('.lancamento-card');
-            if (!cardElement) return;
             const index = cardElement.dataset.index;
             lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
             renderLancamentos();
@@ -542,9 +617,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         try {
             for (const pedido of prontosParaEnviar) {
-                // Adiciona o email do usuário ao payload de envio
                 const payload = { ...pedido, usuarioLogado: currentUser.email };
-                delete payload.chave; // Remove a chave interna antes de enviar
                 await enviarPedido(payload);
             }
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
@@ -571,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 sessaoEquipeSelect.innerHTML = '<option value="">Selecione...</option>';
                 for (const equipe in data.equipes) sessaoEquipeSelect.add(new Option(equipe, equipe));
                 allMembros = [...data.todos_membros].sort();
-                carregarSessao(); // Garante que a equipe seja selecionada se já estiver salva
+                carregarSessao();
             }).catch(e => { console.error("Erro ao carregar equipes:", e); showToast('Erro ao carregar dados.', 'error'); });
         fetch('https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec')
             .then(r => r.json()).then(data => {
@@ -584,7 +657,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputValue = modalAplicador.value.toLowerCase();
         modalAutocompleteList.innerHTML = '';
         modalAutocompleteList.style.display = 'none';
-
         if (inputValue.length > 0) {
             const filteredMembros = allMembros.filter(m => m.toLowerCase().includes(inputValue));
             if (filteredMembros.length > 0) {
@@ -609,7 +681,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./service-worker.js').then(reg => {
