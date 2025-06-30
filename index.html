@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     async function enviarPedido(pedido) {
-        const apiUrl = 'https://script.google.com/macros/s/AKfycbwoQBltuMUVyyHCHLS2zomqEq0OBf50_jPwtaFqEhpFbSIosTbfbNu3fxs3S6AmYSVZTg/exec'; // URL do seu Google Apps Script
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbx0olKDKG3RtwI_xkU3T5NYjyDnGW3gzXPDGO7upd7vmNdNijXDVC2BajftAoG4KfBFeg/exec'; // URL do seu Google Apps Script
         const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
         if (!response.ok) throw new Error('Falha na resposta da API.');
         return response.text();
