@@ -240,7 +240,6 @@
 
 <script>
 // SUAS CREDENCIAIS DO FIREBASE
-// Substitua pela NOVA apiKey que você regenerou por segurança!
 const firebaseConfig = {
     apiKey: "AIzaSyDfbqxZETPoNmB-cxNzx5JNp_A2QkCvXVI",
     authDomain: "consumo-neb.firebaseapp.com",
@@ -481,7 +480,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (show) {
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('visible'), 10);
-            // Adiciona listeners de fechamento
             modal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hide, { once: true }));
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) hide();
@@ -575,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderLancamentos();
                 showToast('Lançamento removido.', 'success');
             });
-            return; // Evita re-renderização desnecessária
+            return;
         }
         renderLancamentos();
     });
@@ -605,9 +603,13 @@ document.addEventListener('DOMContentLoaded', function () {
     sessaoDataInput.addEventListener('change', salvarSessao);
     sessaoEquipeSelect.addEventListener('change', salvarSessao);
 
+    // <-- MUDANÇA INICIA AQUI -->
     enviarButton.addEventListener('click', async () => {
         const currentUser = auth.currentUser;
-        if (!currentUser) { showToast('Sessão expirada. Faça login.', 'error'); return; }
+        if (!currentUser) {
+            showToast('Sessão expirada. Faça login novamente.', 'error');
+            return;
+        }
 
         const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
         if (prontosParaEnviar.length === 0) return;
@@ -616,8 +618,12 @@ document.addEventListener('DOMContentLoaded', function () {
         enviarButton.disabled = true;
         
         try {
+            // Obter o token de ID uma vez para todos os envios
+            const idToken = await currentUser.getIdToken();
+
             for (const pedido of prontosParaEnviar) {
-                const payload = { ...pedido, usuarioLogado: currentUser.email };
+                // Não precisamos mais enviar 'usuarioLogado', o backend obterá do token
+                const payload = { ...pedido, idToken }; // Adiciona o token ao payload
                 await enviarPedido(payload);
             }
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
@@ -631,12 +637,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    async function enviarPedido(pedido) {
-        const apiUrl = 'https://script.google.com/macros/s/AKfycbzs0swFGuc7KNmFiRXBo0oMNNEx3ho4vbN_4KbMzM7RAky0cnHXoicjzd9illncBtCW3Q/exec'; // URL do seu Google Apps Script
-        const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
-        if (!response.ok) throw new Error('Falha na resposta da API.');
-        return response.text();
+    async function enviarPedido(pedidoComToken) {
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbzFDSh-RdbYJ8VuzJ7LLbJ6Iu_Ju0Aslo4pWpp8JA1ECSYVRyw3R5xPWsJ4pUHUjZ6_tw/exec';
+        
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            body: new URLSearchParams(pedidoComToken) // URLSearchParams lida com a codificação
+        });
+
+        if (!response.ok) {
+            throw new Error('Falha na resposta da API. Código: ' + response.status);
+        }
+
+        const result = await response.json(); // Esperamos uma resposta JSON agora
+        if (result.status !== "success") {
+            throw new Error(result.message || 'Ocorreu um erro no servidor.');
+        }
+
+        return result;
     }
+    // <-- MUDANÇA TERMINA AQUI -->
     
     const carregarOpcoes = () => {
         fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
