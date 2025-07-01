@@ -240,10 +240,9 @@
 
 <script>
 // SUAS CREDENCIAIS DO FIREBASE
-// Se a chave abaixo foi exposta publicamente, é ALTAMENTE RECOMENDÁVEL
-// ir ao console do Firebase, deletá-la e gerar uma nova.
+// Substitua pela NOVA apiKey que você regenerou por segurança!
 const firebaseConfig = {
-    apiKey: "SUA_NOVA_API_KEY_AQUI", // SUBSTITUA PELA SUA CHAVE REAL E SEGURA
+    apiKey: "AIzaSyDfbqxZETPoNmB-cxNzx5JNp_A2QkCvXVI",
     authDomain: "consumo-neb.firebaseapp.com",
     projectId: "consumo-neb",
     storageBucket: "consumo-neb.appspot.com",
@@ -304,6 +303,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const managePasswordModal = document.getElementById('manage-password-modal');
     const saveNewPasswordBtn = document.getElementById('save-new-password-btn');
     const managePasswordError = document.getElementById('manage-password-error');
+
     
     // --- LÓGICA DE AUTENTICAÇÃO ---
 
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const creationTime = new Date(user.metadata.creationTime).getTime();
             const lastSignInTime = new Date(user.metadata.lastSignInTime).getTime();
             
-            if (Math.abs(lastSignInTime - creationTime) < 15000) { // Margem de 15s para primeiro acesso
+            if (lastSignInTime - creationTime < 10000) { // Margem de 10s para primeiro acesso
                 authContainer.style.display = 'block';
                 appContainer.classList.remove('visible');
                 showAuthView('change-password-view');
@@ -481,6 +481,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (show) {
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('visible'), 10);
+            // Adiciona listeners de fechamento
             modal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hide, { once: true }));
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) hide();
@@ -497,92 +498,40 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleGenericModal('manage-password-modal', true);
     });
 
-    // CORRIGIDO: Função renderLancamentos reescrita para evitar vulnerabilidades de XSS
     function renderLancamentos() {
         lancamentosContainer.innerHTML = '';
         if (lancamentos.length === 0) {
-            const p = document.createElement('p');
-            p.style.textAlign = 'center';
-            p.style.color = '#6c757d';
-            p.textContent = 'Nenhum lançamento ainda. Clique no botão + para começar.';
-            lancamentosContainer.appendChild(p);
+            lancamentosContainer.innerHTML = '<p style="text-align:center; color:#6c757d;">Nenhum lançamento ainda. Clique no botão + para começar.</p>';
         }
-
         lancamentos.sort((a,b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
-            const isCompletable = item.gasolina > 0 && item.inseticida > 0;
-            const isReady = item.status === 'ready';
-
-            // --- Criação segura dos elementos ---
             const card = document.createElement('div');
             card.className = `lancamento-card status-${item.status}`;
             card.dataset.index = index;
-
-            const cardBody = document.createElement('div');
-            cardBody.className = 'card-body';
-            
-            const cardHeader = document.createElement('div');
-            cardHeader.className = 'card-header';
-            
-            const headerTextDiv = document.createElement('div');
-            const cardTitle = document.createElement('h3');
-            cardTitle.className = 'card-title';
-            cardTitle.textContent = item.aplicador; // SEGURO: Usa textContent
-            const cardSubtitle = document.createElement('p');
-            cardSubtitle.className = 'card-subtitle';
-            cardSubtitle.textContent = `${item.equipe} • Atomizador ${item.atomizador}`; // SEGURO: Usa textContent
-
-            headerTextDiv.append(cardTitle, cardSubtitle);
-            cardHeader.appendChild(headerTextDiv);
-            
-            const cardConsumo = document.createElement('div');
-            cardConsumo.className = 'card-consumo';
-            
-            const createInputGroup = (label, field, value) => {
-                const div = document.createElement('div');
-                div.className = 'form-group';
-                const lbl = document.createElement('label');
-                lbl.textContent = label;
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.className = 'card-input';
-                input.dataset.field = field;
-                input.value = value || '';
-                input.disabled = isReady;
-                div.append(lbl, input);
-                return div;
-            };
-
-            cardConsumo.append(
-                createInputGroup('Gasolina (ml)', 'gasolina', item.gasolina),
-                createInputGroup('Inseticida (ml)', 'inseticida', item.inseticida)
-            );
-
-            cardBody.append(cardHeader, cardConsumo);
-
-            const cardFooter = document.createElement('div');
-            cardFooter.className = 'card-footer';
-            
-            const statusBadge = document.createElement('span');
-            statusBadge.className = 'status-badge';
-            statusBadge.textContent = isReady ? 'Pronto' : 'Pendente';
-            
-            const cardActions = document.createElement('div');
-            cardActions.className = 'card-actions';
-
-            let actionsHtml = '';
-            if (isReady) {
-                actionsHtml = `<button class="action-edit" data-action="edit" title="Editar"><i class="fa-solid fa-pencil"></i></button>`;
-            } else {
-                actionsHtml = `<button class="action-complete" data-action="complete" title="${isCompletable ? 'Marcar como Pronto' : 'Preencha os consumos'}" ${!isCompletable ? 'disabled' : ''}><i class="fa-solid fa-check"></i></button>`;
-            }
-            actionsHtml += `<button class="action-delete" data-action="delete" title="Excluir"><i class="fa-solid fa-trash"></i></button>`;
-            cardActions.innerHTML = actionsHtml;
-
-            cardFooter.append(statusBadge, cardActions);
-            card.append(cardBody, cardFooter);
+            const isCompletable = item.gasolina > 0 && item.inseticida > 0;
+            const isReady = item.status === 'ready';
+            let actionsHtml = isReady ? 
+                `<button class="action-edit" data-action="edit" title="Editar"><i class="fa-solid fa-pencil"></i></button>` :
+                `<button class="action-complete" data-action="complete" title="${isCompletable ? 'Marcar como Pronto' : 'Preencha os consumos'}" ${!isCompletable ? 'disabled' : ''}><i class="fa-solid fa-check"></i></button>`;
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">${item.aplicador}</h3>
+                            <p class="card-subtitle">${item.equipe} • Atomizador ${item.atomizador}</p>
+                        </div>
+                    </div>
+                    <div class="card-consumo">
+                        <div class="form-group"><label>Gasolina (ml)</label><input type="number" class="card-input" data-field="gasolina" value="${item.gasolina || ''}" ${isReady ? 'disabled' : ''}></div>
+                        <div class="form-group"><label>Inseticida (ml)</label><input type="number" class="card-input" data-field="inseticida" value="${item.inseticida || ''}" ${isReady ? 'disabled' : ''}></div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span class="status-badge">${isReady ? 'Pronto' : 'Pendente'}</span>
+                    <div class="card-actions">${actionsHtml}<button class="action-delete" data-action="delete" title="Excluir"><i class="fa-solid fa-trash"></i></button></div>
+                </div>
+            `;
             lancamentosContainer.appendChild(card);
         });
-
         atualizarContadorEnvio();
         salvarDados();
     }
@@ -626,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderLancamentos();
                 showToast('Lançamento removido.', 'success');
             });
-            return;
+            return; // Evita re-renderização desnecessária
         }
         renderLancamentos();
     });
@@ -656,38 +605,25 @@ document.addEventListener('DOMContentLoaded', function () {
     sessaoDataInput.addEventListener('change', salvarSessao);
     sessaoEquipeSelect.addEventListener('change', salvarSessao);
 
-    // CORRIGIDO: Função de envio segura com token de autenticação
     enviarButton.addEventListener('click', async () => {
         const currentUser = auth.currentUser;
-        if (!currentUser) {
-            showToast('Sessão expirada. Faça login novamente.', 'error');
-            auth.signOut(); 
-            return;
-        }
+        if (!currentUser) { showToast('Sessão expirada. Faça login.', 'error'); return; }
 
         const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
         if (prontosParaEnviar.length === 0) return;
 
-        enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando e Enviando...';
+        enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
         enviarButton.disabled = true;
-
+        
         try {
-            // 1. Obter o token de identidade do Firebase
-            const idToken = await currentUser.getIdToken(true);
-
-            // 2. Montar o payload com o token e um array de lançamentos
-            const payload = {
-                token: idToken,
-                lancamentos: prontosParaEnviar
-            };
-
-            await enviarPedidos(payload);
-            
+            for (const pedido of prontosParaEnviar) {
+                const payload = { ...pedido, usuarioLogado: currentUser.email };
+                await enviarPedido(payload);
+            }
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
             renderLancamentos();
-            showToast(`${prontosParaEnviar.length} lançamento(s) enviado(s) com sucesso!`, 'success');
-
-        } catch (error) {
+            showToast('Lançamentos enviados com sucesso!', 'success');
+        } catch(error) {
             showToast(`Erro ao enviar: ${error.message}`, 'error');
             console.error("Erro no envio:", error);
         } finally {
@@ -695,29 +631,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // CORRIGIDO: Função para enviar um único payload com todos os dados e o token
-    async function enviarPedidos(payload) {
-        // IMPORTANTE: Use a NOVA URL fornecida pelo Google Apps Script após reimplantar o script corrigido.
-        const apiUrl = 'https://script.google.com/macros/s/AKfycbwV-k3KtN5k9qY-zeDCtw1VFt6izHwZEjydWs3nP7AKO_zvcZwNSwWWyVZlDFz9EdcTRQ/exec'; 
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8', // Requerido pelo Apps Script para parsear JSON via e.postData.contents
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || result.status !== 'success') {
-            throw new Error(result.message || 'Falha na resposta da API.');
-        }
-        return result;
+    async function enviarPedido(pedido) {
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbxsx_ziz2skGNQ9mnjmPVGklxIfPF1Zx8lAEr4lQiXRuJLGVN4wxhOC2gd8DGZWA4verg/exec'; // URL do seu Google Apps Script
+        const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
+        if (!response.ok) throw new Error('Falha na resposta da API.');
+        return response.text();
     }
     
     const carregarOpcoes = () => {
-        // URLs das APIs de consulta (aparentemente públicas e só para leitura, o que é aceitável)
         fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
             .then(r => r.json()).then(data => {
                 sessaoEquipeSelect.innerHTML = '<option value="">Selecione...</option>';
