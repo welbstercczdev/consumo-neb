@@ -481,7 +481,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (show) {
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('visible'), 10);
-            // Adiciona listeners de fechamento
             modal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', hide, { once: true }));
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) hide();
@@ -605,9 +604,17 @@ document.addEventListener('DOMContentLoaded', function () {
     sessaoDataInput.addEventListener('change', salvarSessao);
     sessaoEquipeSelect.addEventListener('change', salvarSessao);
 
+
+    // ##################################################################
+    // ### INÍCIO DAS ALTERAÇÕES DE SEGURANÇA ###
+    // ##################################################################
+
     enviarButton.addEventListener('click', async () => {
         const currentUser = auth.currentUser;
-        if (!currentUser) { showToast('Sessão expirada. Faça login.', 'error'); return; }
+        if (!currentUser) {
+            showToast('Sessão expirada. Faça login novamente.', 'error');
+            return;
+        }
 
         const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
         if (prontosParaEnviar.length === 0) return;
@@ -617,9 +624,11 @@ document.addEventListener('DOMContentLoaded', function () {
         
         try {
             for (const pedido of prontosParaEnviar) {
-                const payload = { ...pedido, usuarioLogado: currentUser.email };
+                // O payload NÃO precisa mais do 'usuarioLogado'. O servidor cuidará disso.
+                const payload = { ...pedido }; // CORREÇÃO APLICADA AQUI
                 await enviarPedido(payload);
             }
+            // Remove apenas os lançamentos que foram enviados com sucesso
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
             renderLancamentos();
             showToast('Lançamentos enviados com sucesso!', 'success');
@@ -627,16 +636,57 @@ document.addEventListener('DOMContentLoaded', function () {
             showToast(`Erro ao enviar: ${error.message}`, 'error');
             console.error("Erro no envio:", error);
         } finally {
+            // Atualiza o botão de envio em qualquer cenário (sucesso ou falha)
             atualizarContadorEnvio();
         }
     });
 
     async function enviarPedido(pedido) {
-        const apiUrl = 'https://script.google.com/macros/s/AKfycbxsx_ziz2skGNQ9mnjmPVGklxIfPF1Zx8lAEr4lQiXRuJLGVN4wxhOC2gd8DGZWA4verg/exec'; // URL do seu Google Apps Script
-        const response = await fetch(apiUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(pedido).toString() });
-        if (!response.ok) throw new Error('Falha na resposta da API.');
-        return response.text();
+        // Pega o usuário logado atualmente no Firebase
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            throw new Error('Usuário não está logado. A sessão pode ter expirado.');
+        }
+
+        // Gera o token de identificação do Firebase. Isso é uma prova criptográfica de identidade.
+        const token = await currentUser.getIdToken();
+
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !! SUBSTITUA PELA NOVA URL DO SEU SCRIPT DEPOIS DE REIMPLANTÁ-LO !!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbx2Hgdq25anxUu9Dvz4jhzZ_5gdgoUuWq1r0YRl10omJgvr0j6fBHR9prcacziTOiblYQ/exec'; // <-- ATUALIZE ESTA URL!
+
+        // A requisição agora envia os dados como JSON e inclui o token de autorização no cabeçalho.
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token // <-- Cabeçalho de segurança
+            },
+            body: JSON.stringify(pedido), // Envia os dados como uma string JSON
+            redirect: 'follow'
+        });
+
+        if (!response.ok) {
+            // Tenta ler a mensagem de erro da API para dar um feedback melhor ao usuário
+            let errorMessage = 'Falha na resposta da API.';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Se a resposta não for JSON, usa o status text
+                errorMessage = response.statusText;
+            }
+            throw new Error(errorMessage);
+        }
+        
+        // Retorna a resposta da API (agora em JSON)
+        return response.json();
     }
+
+    // ##################################################################
+    // ### FIM DAS ALTERAÇÕES DE SEGURANÇA ###
+    // ##################################################################
     
     const carregarOpcoes = () => {
         fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
