@@ -72,6 +72,7 @@
         .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn { padding: 12px 20px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
         .btn-primary { background-color: var(--cor-primaria); color: #fff; }
+        .btn-success { background-color: var(--cor-sucesso); color: #fff; }
         .btn-danger { background-color: var(--cor-perigo); color: #fff; }
         .btn-secondary { background-color: #6c757d; color: #fff; }
         .bottom-actions { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; padding: 15px; text-align: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.07); z-index: 999; }
@@ -96,6 +97,11 @@
         .header-user i { cursor: pointer; font-size: 1.2rem; }
         .header-user #change-password-main-btn { color: var(--cor-primaria-escura); }
         .header-user #logout-btn { color: var(--cor-perigo); }
+        /* Estilos para o modal de revisão */
+        #review-table-container table { border: 1px solid var(--cor-borda); }
+        #review-table-container th { background-color: var(--cor-fundo); border-bottom: 2px solid var(--cor-borda); }
+        #review-table-container td { border-bottom: 1px solid var(--cor-borda); }
+        #review-table-container input { border-radius: 4px; padding: 8px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -150,6 +156,16 @@
                 <i class="fa-solid fa-right-from-bracket" id="logout-btn" title="Sair"></i>
             </div>
         </header>
+
+        <!-- Seção de Lançamento por Imagem -->
+        <div class="session-panel">
+            <h2><i class="fa-solid fa-camera"></i> Lançamento por Imagem</h2>
+            <p style="text-align:center; font-size:0.9rem; color:#6c757d;">Envie uma foto da planilha para preenchimento automático.</p>
+            <input type="file" id="image-input" accept="image/*" style="display: none;">
+            <button class="btn btn-primary" id="upload-btn" style="width:100%"><i class="fa-solid fa-upload"></i> Escolher Imagem</button>
+            <div class="error-message" id="ocr-error"></div>
+        </div>
+
         <div class="session-panel">
             <h2><i class="fa-solid fa-calendar-days"></i> Sessão de Trabalho</h2>
             <div class="session-info">
@@ -228,6 +244,23 @@
         </div>
     </div>
 
+    <!-- Modal de Revisão do OCR -->
+    <div class="modal-overlay" id="review-modal">
+        <div class="modal-content" style="max-width: 95vw; width: 100%;">
+            <div class="modal-header">
+                <h2>Revise os Dados Lidos</h2>
+                <button class="close-btn" data-modal-id="review-modal">×</button>
+            </div>
+            <div class="modal-body" id="review-table-container" style="max-height: 60vh; overflow-y: auto;">
+                <!-- A tabela de revisão será inserida aqui via JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-btn" data-modal-id="review-modal">Cancelar</button>
+                <button class="btn btn-success" id="confirm-ocr-btn">Confirmar e Adicionar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="bottom-actions"><button class="btn-submit-all" id="enviar-button" disabled><i class="fa-solid fa-paper-plane"></i> Enviar (0)</button></div>
 </div>
 
@@ -255,8 +288,8 @@ const auth = firebase.auth();
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    const DATA_KEY_PREFIX = 'consumo_Lancamentos_v9_';
-    const SESSION_KEY_PREFIX = 'consumo_Sessao_v9_';
+    const DATA_KEY_PREFIX = 'consumo_Lancamentos_v10_'; // v10 para nova estrutura
+    const SESSION_KEY_PREFIX = 'consumo_Sessao_v10_';
     let DATA_KEY = '';
     let SESSION_KEY = '';
     let lancamentos = [];
@@ -303,6 +336,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveNewPasswordBtn = document.getElementById('save-new-password-btn');
     const managePasswordError = document.getElementById('manage-password-error');
 
+    // Funcionalidade OCR
+    const uploadBtn = document.getElementById('upload-btn');
+    const imageInput = document.getElementById('image-input');
+    const ocrError = document.getElementById('ocr-error');
+    const reviewModal = document.getElementById('review-modal');
+    const reviewTableContainer = document.getElementById('review-table-container');
+    const confirmOcrBtn = document.getElementById('confirm-ocr-btn');
+    
+    // URL da sua Cloud Function
+    const OCR_FUNCTION_URL = 'https://process-consumption-image-748729779853.southamerica-east1.run.app';
+
     
     // --- LÓGICA DE AUTENTICAÇÃO ---
 
@@ -316,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const creationTime = new Date(user.metadata.creationTime).getTime();
             const lastSignInTime = new Date(user.metadata.lastSignInTime).getTime();
             
-            if (lastSignInTime - creationTime < 10000) { // Margem de 10s para primeiro acesso
+            if (lastSignInTime - creationTime < 10000) {
                 authContainer.style.display = 'block';
                 appContainer.classList.remove('visible');
                 showAuthView('change-password-view');
@@ -353,7 +397,6 @@ document.addEventListener('DOMContentLoaded', function () {
         auth.signInWithEmailAndPassword(email, password)
             .catch(error => {
                 errorDiv.textContent = 'Email ou senha inválidos.';
-                console.error("Erro de login:", error.message);
             })
             .finally(() => {
                 loginBtn.textContent = 'Entrar';
@@ -378,7 +421,6 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => {
                 errorDiv.textContent = 'Erro ao enviar. Verifique o e-mail.';
-                console.error("Erro de redefinição:", error.message);
             })
             .finally(() => sendResetBtn.disabled = false);
     });
@@ -401,7 +443,6 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => {
                 errorDiv.textContent = 'Erro ao alterar a senha.';
-                console.error("Erro ao alterar senha:", error.message);
             })
             .finally(() => changePasswordBtn.disabled = false);
     });
@@ -429,7 +470,6 @@ document.addEventListener('DOMContentLoaded', function () {
             showToast('Senha alterada com sucesso!', 'success');
             toggleGenericModal('manage-password-modal', false);
         } catch (error) {
-            console.error("Erro ao alterar senha:", error);
             managePasswordError.textContent = error.code === 'auth/wrong-password' ? 'A senha atual está incorreta.' : 'Ocorreu um erro. Tente novamente.';
         } finally {
             saveNewPasswordBtn.disabled = false;
@@ -499,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderLancamentos() {
         lancamentosContainer.innerHTML = '';
         if (lancamentos.length === 0) {
-            lancamentosContainer.innerHTML = '<p style="text-align:center; color:#6c757d;">Nenhum lançamento ainda. Clique no botão + para começar.</p>';
+            lancamentosContainer.innerHTML = '<p style="text-align:center; color:#6c757d;">Nenhum lançamento ainda. Clique no botão + para começar ou use a câmera para ler uma planilha.</p>';
         }
         lancamentos.sort((a,b) => a.aplicador.localeCompare(b.aplicador)).forEach((item, index) => {
             const card = document.createElement('div');
@@ -603,13 +643,9 @@ document.addEventListener('DOMContentLoaded', function () {
     sessaoDataInput.addEventListener('change', salvarSessao);
     sessaoEquipeSelect.addEventListener('change', salvarSessao);
 
-    // <-- MUDANÇA INICIA AQUI -->
     enviarButton.addEventListener('click', async () => {
         const currentUser = auth.currentUser;
-        if (!currentUser) {
-            showToast('Sessão expirada. Faça login novamente.', 'error');
-            return;
-        }
+        if (!currentUser) { showToast('Sessão expirada. Faça login.', 'error'); return; }
 
         const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
         if (prontosParaEnviar.length === 0) return;
@@ -618,12 +654,9 @@ document.addEventListener('DOMContentLoaded', function () {
         enviarButton.disabled = true;
         
         try {
-            // Obter o token de ID uma vez para todos os envios
             const idToken = await currentUser.getIdToken();
-
             for (const pedido of prontosParaEnviar) {
-                // Não precisamos mais enviar 'usuarioLogado', o backend obterá do token
-                const payload = { ...pedido, idToken }; // Adiciona o token ao payload
+                const payload = { ...pedido, idToken };
                 await enviarPedido(payload);
             }
             lancamentos = lancamentos.filter(l => l.status !== 'ready');
@@ -631,32 +664,19 @@ document.addEventListener('DOMContentLoaded', function () {
             showToast('Lançamentos enviados com sucesso!', 'success');
         } catch(error) {
             showToast(`Erro ao enviar: ${error.message}`, 'error');
-            console.error("Erro no envio:", error);
         } finally {
             atualizarContadorEnvio();
         }
     });
 
     async function enviarPedido(pedidoComToken) {
-        const apiUrl = 'https://script.google.com/macros/s/AKfycbzFDSh-RdbYJ8VuzJ7LLbJ6Iu_Ju0Aslo4pWpp8JA1ECSYVRyw3R5xPWsJ4pUHUjZ6_tw/exec';
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            body: new URLSearchParams(pedidoComToken) // URLSearchParams lida com a codificação
-        });
-
-        if (!response.ok) {
-            throw new Error('Falha na resposta da API. Código: ' + response.status);
-        }
-
-        const result = await response.json(); // Esperamos uma resposta JSON agora
-        if (result.status !== "success") {
-            throw new Error(result.message || 'Ocorreu um erro no servidor.');
-        }
-
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbzs0swFGuc7KNmFiRXBo0oMNNEx3ho4vbN_4KbMzM7RAky0cnHXoicjzd9illncBtCW3Q/exec';
+        const response = await fetch(apiUrl, { method: 'POST', body: new URLSearchParams(pedidoComToken) });
+        if (!response.ok) throw new Error('Falha na resposta da API. Código: ' + response.status);
+        const result = await response.json();
+        if (result.status !== "success") throw new Error(result.message || 'Ocorreu um erro no servidor.');
         return result;
     }
-    // <-- MUDANÇA TERMINA AQUI -->
     
     const carregarOpcoes = () => {
         fetch('https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec')
@@ -665,12 +685,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 for (const equipe in data.equipes) sessaoEquipeSelect.add(new Option(equipe, equipe));
                 allMembros = [...data.todos_membros].sort();
                 carregarSessao();
-            }).catch(e => { console.error("Erro ao carregar equipes:", e); showToast('Erro ao carregar dados.', 'error'); });
+            }).catch(e => { showToast('Erro ao carregar dados.', 'error'); });
         fetch('https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec')
             .then(r => r.json()).then(data => {
                 modalAtomizador.innerHTML = '<option value="">Selecione...</option>';
                 data.atomizadores.forEach(a => modalAtomizador.add(new Option(a, a)));
-            }).catch(e => { console.error("Erro ao carregar atomizadores:", e); showToast('Erro ao carregar dados.', 'error'); });
+            }).catch(e => { showToast('Erro ao carregar dados.', 'error'); });
     };
     
     modalAplicador.addEventListener('input', function () {
@@ -701,6 +721,136 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // --- LÓGICA OCR ---
+    uploadBtn.addEventListener('click', () => imageInput.click());
+
+    imageInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Lendo imagem...';
+        ocrError.textContent = '';
+
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            try {
+                const response = await fetch(OCR_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: reader.result })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro no servidor: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.data && result.data.length > 0) {
+                    displayReviewData(result.data);
+                } else {
+                    ocrError.textContent = result.message || 'Nenhum dado de tabela encontrado na imagem.';
+                }
+
+            } catch (error) {
+                console.error('OCR Error:', error);
+                ocrError.textContent = 'Falha ao processar a imagem. Tente novamente.';
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Escolher Imagem';
+                imageInput.value = '';
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function displayReviewData(data) {
+        let tableHtml = `
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align:left;">
+                        <th style="padding:8px;">Líder</th>
+                        <th style="padding:8px;">ATM</th>
+                        <th style="padding:8px;">Aplicador</th>
+                        <th style="padding:8px;">Gasolina</th>
+                        <th style="padding:8px;">INS</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        data.forEach((row, index) => {
+            tableHtml += `
+                <tr data-index="${index}">
+                    <td><input type="text" value="${row.Lider || ''}" class="review-input" data-field="Lider"></td>
+                    <td><input type="text" value="${row.ATM || ''}" class="review-input" data-field="ATM"></td>
+                    <td><input type="text" value="${row.Aplicador || ''}" class="review-input" data-field="Aplicador"></td>
+                    <td><input type="number" value="${(row.Gasolina || '').replace(/\D/g,'')}" class="review-input" data-field="Gasolina"></td>
+                    <td><input type="number" value="${(row.INS || '').replace(/\D/g,'')}" class="review-input" data-field="INS"></td>
+                </tr>
+            `;
+        });
+
+        tableHtml += '</tbody></table>';
+        reviewTableContainer.innerHTML = tableHtml;
+        toggleGenericModal('review-modal', true);
+    }
+    
+    confirmOcrBtn.addEventListener('click', () => {
+        const sessaoData = sessaoDataInput.value;
+        const sessaoEquipe = sessaoEquipeSelect.value;
+        if (!sessaoData || !sessaoEquipe) {
+            showToast('Antes, defina a Data e a Equipe da Sessão de Trabalho!', 'error');
+            toggleGenericModal('review-modal', false);
+            return;
+        }
+
+        const reviewRows = reviewTableContainer.querySelectorAll('tbody tr');
+        let addedCount = 0;
+        
+        reviewRows.forEach(tr => {
+            const rowData = {
+                Lider: tr.querySelector('[data-field="Lider"]').value,
+                ATM: tr.querySelector('[data-field="ATM"]').value,
+                Aplicador: tr.querySelector('[data-field="Aplicador"]').value,
+                Gasolina: tr.querySelector('[data-field="Gasolina"]').value,
+                INS: tr.querySelector('[data-field="INS"]').value
+            };
+
+            // Ignora linhas sem dados essenciais
+            if (!rowData.Aplicador && !rowData.ATM) {
+                return;
+            }
+
+            const chaveUnica = `${sessaoData}-${sessaoEquipe}-${rowData.Aplicador}-${rowData.ATM}`;
+            
+            if (lancamentos.some(l => l.chave === chaveUnica)) {
+                return;
+            }
+            
+            const [year, month, day] = sessaoData.split('-');
+
+            lancamentos.push({
+                chave: chaveUnica,
+                data: sessaoData,
+                data_fmt: `${day}/${month}/${year}`,
+                equipe: sessaoEquipe,
+                aplicador: rowData.Aplicador,
+                atomizador: rowData.ATM,
+                gasolina: parseFloat(rowData.Gasolina) || 0,
+                inseticida: parseFloat(rowData.INS) || 0,
+                status: 'ready'
+            });
+            addedCount++;
+        });
+
+        renderLancamentos();
+        toggleGenericModal('review-modal', false);
+        showToast(`${addedCount} novos lançamentos adicionados!`, 'success');
+    });
+
+
+    // Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./service-worker.js').then(reg => {
