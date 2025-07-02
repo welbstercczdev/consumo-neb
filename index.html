@@ -97,10 +97,10 @@
         .header-user i { cursor: pointer; font-size: 1.2rem; }
         .header-user #change-password-main-btn { color: var(--cor-primaria-escura); }
         .header-user #logout-btn { color: var(--cor-perigo); }
-        #review-table-container table { border: 1px solid var(--cor-borda); font-size: 0.8rem; }
+        #review-table-container table { border: 1px solid var(--cor-borda); font-size: 0.8rem; width: 100%; border-collapse: collapse;}
         #review-table-container th { background-color: var(--cor-fundo); border-bottom: 2px solid var(--cor-borda); padding: 8px; text-align: left; }
-        #review-table-container td { border-bottom: 1px solid var(--cor-borda); }
-        #review-table-container input { border-radius: 4px; padding: 8px; font-size: 0.9rem; border: 1px solid #ccc; }
+        #review-table-container td { border-bottom: 1px solid var(--cor-borda); padding: 2px;}
+        #review-table-container input { border-radius: 4px; padding: 8px; font-size: 0.9rem; border: 1px solid #ccc; width: 100%;}
         #review-table-container input:focus { border-color: var(--cor-primaria); }
     </style>
 </head>
@@ -205,7 +205,7 @@
         </div>
     </div>
     <div class="modal-overlay" id="review-modal">
-        <div class="modal-content" style="max-width: 95vw; width: 100%;">
+        <div class="modal-content" style="max-width: 95vw; width: 100%; overflow-x: auto;">
             <div class="modal-header"><h2>Revise os Dados Lidos</h2><button class="close-btn" data-modal-id="review-modal">×</button></div>
             <div class="modal-body" id="review-table-container" style="max-height: 60vh; overflow-y: auto;"></div>
             <div class="modal-footer"><button class="btn btn-secondary close-btn" data-modal-id="review-modal">Cancelar</button><button class="btn btn-success" id="confirm-ocr-btn">Confirmar e Adicionar</button></div>
@@ -234,12 +234,11 @@
     const auth = firebase.auth();
 
     document.addEventListener('DOMContentLoaded', function () {
-        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v12_';
-        const SESSION_KEY_PREFIX = 'consumo_Sessao_v12_';
+        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v13_';
+        const SESSION_KEY_PREFIX = 'consumo_Sessao_v13_';
         let DATA_KEY = '', SESSION_KEY = '';
         let lancamentos = [], allMembros = [];
 
-        // --- Seletores de Elementos ---
         const selectors = {
             authContainer: document.getElementById('auth-container'),
             appContainer: document.getElementById('app-view-container'),
@@ -263,9 +262,7 @@
             modalGasolina: document.getElementById('modal-gasolina'),
             modalInseticida: document.getElementById('modal-inseticida'),
             modalAutocompleteList: document.getElementById('modal-autocomplete-list'),
-            managePasswordModal: document.getElementById('manage-password-modal'),
             saveNewPasswordBtn: document.getElementById('save-new-password-btn'),
-            managePasswordError: document.getElementById('manage-password-error'),
             uploadBtn: document.getElementById('upload-btn'),
             imageInput: document.getElementById('image-input'),
             ocrError: document.getElementById('ocr-error'),
@@ -278,15 +275,11 @@
         const APPS_SCRIPT_URL_EQUIPES = 'https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec';
         const APPS_SCRIPT_URL_ATOMIZADORES = 'https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec';
 
-        // --- Lógica de Autenticação ---
         auth.onAuthStateChanged(user => {
+            const isNewUser = user && (new Date(user.metadata.lastSignInTime).getTime() - new Date(user.metadata.creationTime).getTime() < 15000);
+            selectors.appContainer.classList.toggle('visible', !!user && !isNewUser);
+            selectors.authContainer.style.display = user ? (isNewUser ? 'block' : 'none') : 'block';
             if (user) {
-                const creationTime = new Date(user.metadata.creationTime).getTime();
-                const lastSignInTime = new Date(user.metadata.lastSignInTime).getTime();
-                const isNewUser = (lastSignInTime - creationTime) < 15000;
-                
-                selectors.appContainer.classList.toggle('visible', !isNewUser);
-                selectors.authContainer.style.display = isNewUser ? 'block' : 'none';
                 if (isNewUser) {
                     showAuthView('change-password-view');
                 } else {
@@ -294,8 +287,6 @@
                     initializeUserData(user.uid);
                 }
             } else {
-                selectors.appContainer.classList.remove('visible');
-                selectors.authContainer.style.display = 'block';
                 showAuthView('login-view');
             }
         });
@@ -309,25 +300,16 @@
             DATA_KEY = `${DATA_KEY_PREFIX}${uid}`;
             SESSION_KEY = `${SESSION_KEY_PREFIX}${uid}`;
             lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || [];
-            carregarSessao();
             carregarOpcoes();
-            renderLancamentos();
         }
 
-        function setupAuthListeners() {
-            selectors.loginBtn.addEventListener('click', () => { /* ... código de login ... */ });
-            // ... todos os outros listeners de autenticação ...
-        }
-        setupAuthListeners(); // Chame para configurar os listeners.
-
-        // --- Funções Utilitárias ---
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             document.getElementById('toast-container').appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 100);
-            setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000);
+            setTimeout(() => toast.addEventListener('transitionend', () => toast.remove()), 3100);
         }
 
         const toggleGenericModal = (modalId, show) => {
@@ -342,7 +324,6 @@
             } else { hide(); }
         };
 
-        // --- Lógica Principal da Aplicação ---
         function renderLancamentos() {
             selectors.lancamentosContainer.innerHTML = '';
             if (lancamentos.length === 0) {
@@ -362,16 +343,20 @@
         }
 
         function carregarOpcoes() {
-            fetch(APPS_SCRIPT_URL_EQUIPES).then(r => r.json()).then(data => {
+            Promise.all([
+                fetch(APPS_SCRIPT_URL_EQUIPES).then(r => r.json()),
+                fetch(APPS_SCRIPT_URL_ATOMIZADORES).then(r => r.json())
+            ]).then(([equipesData, atomizadoresData]) => {
                 selectors.sessaoEquipeSelect.innerHTML = '<option value="">Selecione...</option>';
-                Object.keys(data.equipes).forEach(e => selectors.sessaoEquipeSelect.add(new Option(e, e)));
-                allMembros = [...data.todos_membros].sort();
-                carregarSessao();
-            });
-            fetch(APPS_SCRIPT_URL_ATOMIZADORES).then(r => r.json()).then(data => {
+                Object.keys(equipesData.equipes).forEach(e => selectors.sessaoEquipeSelect.add(new Option(e, e)));
+                allMembros = [...equipesData.todos_membros].sort();
+                
                 selectors.modalAtomizador.innerHTML = '<option value="">Selecione...</option>';
-                data.atomizadores.forEach(a => selectors.modalAtomizador.add(new Option(a, a)));
-            });
+                atomizadoresData.atomizadores.forEach(a => selectors.modalAtomizador.add(new Option(a, a)));
+
+                carregarSessao();
+                renderLancamentos();
+            }).catch(err => showToast('Erro ao carregar dados iniciais.', 'error'));
         }
 
         function atualizarContadorEnvio() {
@@ -381,15 +366,25 @@
         }
 
         const salvarDados = () => localStorage.setItem(DATA_KEY, JSON.stringify(lancamentos));
-        const salvarSessao = () => localStorage.setItem(SESSION_KEY, JSON.stringify({ data: selectors.sessaoDataInput.value, equipe: selectors.sessaoEquipeSelect.value }));
         const carregarSessao = () => {
             const sessao = JSON.parse(localStorage.getItem(SESSION_KEY)) || {};
             selectors.sessaoDataInput.value = sessao.data || new Date().toISOString().split('T')[0];
             selectors.sessaoEquipeSelect.value = sessao.equipe || '';
-            salvarSessao();
         };
+        const salvarSessao = () => localStorage.setItem(SESSION_KEY, JSON.stringify({ data: selectors.sessaoDataInput.value, equipe: selectors.sessaoEquipeSelect.value }));
 
         // --- Listeners de Eventos ---
+        selectors.loginBtn.addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.textContent = '';
+            selectors.loginBtn.disabled = true;
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(err => errorDiv.textContent = 'Email ou senha inválidos.')
+                .finally(() => selectors.loginBtn.disabled = false);
+        });
+        
         selectors.fabAdd.addEventListener('click', () => toggleGenericModal('add-modal', true));
         selectors.changePasswordMainBtn.addEventListener('click', () => toggleGenericModal('manage-password-modal', true));
         selectors.sessaoDataInput.addEventListener('change', salvarSessao);
@@ -398,23 +393,18 @@
         selectors.lancamentosContainer.addEventListener('click', (e) => {
             const button = e.target.closest('button[data-action]');
             if (!button) return;
-            const card = e.target.closest('.lancamento-card');
-            const index = card.dataset.index;
+            const index = e.target.closest('.lancamento-card').dataset.index;
             const action = button.dataset.action;
-
-            if (action === 'delete') {
-                lancamentos.splice(index, 1);
-                showToast('Lançamento removido.', 'success');
-            } else {
-                lancamentos[index].status = action === 'complete' ? 'ready' : 'pending';
-            }
+            if (action === 'delete') { lancamentos.splice(index, 1); showToast('Removido.', 'success'); }
+            else { lancamentos[index].status = action === 'complete' ? 'ready' : 'pending'; }
             renderLancamentos();
         });
 
-        selectors.lancamentosContainer.addEventListener('change', (e) => {
+        selectors.lancamentosContainer.addEventListener('input', (e) => {
             if (e.target.classList.contains('card-input')) {
                 const index = e.target.closest('.lancamento-card').dataset.index;
                 lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
+                salvarDados(); // Salva ao digitar
             }
         });
 
@@ -423,7 +413,6 @@
             const atomizador = selectors.modalAtomizador.value;
             const sessaoData = selectors.sessaoDataInput.value;
             const sessaoEquipe = selectors.sessaoEquipeSelect.value;
-            
             if (!sessaoData || !sessaoEquipe) return showToast('Defina a Data e a Equipe!', 'error');
             if (!aplicador || !atomizador) return selectors.modalError.textContent = 'Preencha todos os campos.';
             
@@ -431,13 +420,7 @@
             if (lancamentos.some(l => l.chave === chave)) return selectors.modalError.textContent = 'Lançamento já existe.';
             
             const [y, m, d] = sessaoData.split('-');
-            lancamentos.push({
-                chave, data: sessaoData, data_fmt: `${d}/${m}/${y}`, equipe: sessaoEquipe,
-                aplicador, atomizador, 
-                gasolina: parseFloat(selectors.modalGasolina.value) || 0,
-                inseticida: parseFloat(selectors.modalInseticida.value) || 0,
-                status: 'pending'
-            });
+            lancamentos.push({ chave, data: sessaoData, data_fmt: `${d}/${m}/${y}`, equipe: sessaoEquipe, aplicador, atomizador, gasolina: parseFloat(selectors.modalGasolina.value) || 0, inseticida: parseFloat(selectors.modalInseticida.value) || 0, status: 'pending' });
             
             renderLancamentos();
             toggleGenericModal('add-modal', false);
@@ -459,10 +442,7 @@
             try {
                 const idToken = await currentUser.getIdToken(true);
                 for (const pedido of prontos) {
-                    await fetch(APPS_SCRIPT_URL_CONSUMO, {
-                        method: 'POST',
-                        body: new URLSearchParams({ ...pedido, idToken })
-                    });
+                    await fetch(APPS_SCRIPT_URL_CONSUMO, { method: 'POST', body: new URLSearchParams({ ...pedido, idToken }) });
                 }
                 lancamentos = lancamentos.filter(l => l.status !== 'ready');
                 renderLancamentos();
@@ -488,7 +468,10 @@
             reader.onloadend = async () => {
                 try {
                     const response = await fetch(OCR_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: reader.result }) });
-                    if (!response.ok) throw new Error(`Erro no servidor (${response.status})`);
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.message || `Erro no servidor (${response.status})`);
+                    }
                     
                     const result = await response.json();
                     if (result.data && result.data.length > 0) {
@@ -498,7 +481,7 @@
                     }
                 } catch (error) {
                     console.error("OCR Error:", error);
-                    selectors.ocrError.textContent = 'Falha ao processar a imagem. Tente novamente.';
+                    selectors.ocrError.textContent = `Falha: ${error.message}`;
                 } finally {
                     selectors.uploadBtn.disabled = false;
                     selectors.uploadBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Escolher Imagem';
@@ -509,7 +492,7 @@
         });
 
         function displayReviewData(data) {
-            let tableHtml = `<table style="width:100%; border-collapse: collapse;"><thead><tr style="text-align:left;"><th style="padding:8px;">Líder</th><th style="padding:8px;">ATM</th><th style="padding:8px;">Aplicador</th><th style="padding:8px;">Gasolina</th><th style="padding:8px;">INS</th></tr></thead><tbody>`;
+            let tableHtml = `<table style="width:100%;"><thead><tr><th>Líder</th><th>ATM</th><th>Aplicador</th><th>Gasolina</th><th>INS</th></tr></thead><tbody>`;
             data.forEach((row, index) => {
                 tableHtml += `<tr data-index="${index}">
                     <td><input type="text" value="${row.Lider || ''}" data-field="Lider"></td>
@@ -553,7 +536,7 @@
                     aplicador: rowData.Aplicador, atomizador: rowData.ATM,
                     gasolina: parseFloat(rowData.Gasolina) || 0,
                     inseticida: parseFloat(rowData.INS) || 0,
-                    status: 'ready' // Dados da foto já entram como prontos
+                    status: 'ready'
                 });
                 addedCount++;
             });
