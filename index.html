@@ -79,7 +79,7 @@
         .btn-submit-all { background-color: var(--cor-sucesso); color: #fff; border: none; border-radius: 50px; padding: 15px 25px; font-size: 1.1rem; font-weight: 600; width: 100%; max-width: 400px; }
         .error-message { color: var(--cor-perigo); font-weight: 500; text-align: center; min-height: 20px; font-size: 0.9rem; }
         .autocomplete-container { position: relative; }
-        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #ddd; background-color: #fff; z-index: 2001; max-height: 150px; overflow-y: auto; list-style: none; padding: 0; margin: 0; box-sizing: border-box; border-radius: 8px; }
+        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #ddd; background-color: #fff; z-index: 2001; max-height: 150px; overflow-y: auto; list-style: none; padding: 0; margin: 0; box-sizing: border-box; border-radius: 8px; box-shadow: var(--sombra); }
         .autocomplete-item { padding: 10px; cursor: pointer; }
         .autocomplete-item:hover { background-color: #f0f0f0; }
         #toast-container { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -97,10 +97,10 @@
         .header-user i { cursor: pointer; font-size: 1.2rem; }
         .header-user #change-password-main-btn { color: var(--cor-primaria-escura); }
         .header-user #logout-btn { color: var(--cor-perigo); }
-        #review-table-container table { border: 1px solid var(--cor-borda); font-size: 0.8rem; width: 100%; border-collapse: collapse;}
-        #review-table-container th { background-color: var(--cor-fundo); border-bottom: 2px solid var(--cor-borda); padding: 8px; text-align: left; }
-        #review-table-container td { border-bottom: 1px solid var(--cor-borda); padding: 2px;}
-        #review-table-container input { border-radius: 4px; padding: 8px; font-size: 0.9rem; border: 1px solid #ccc; width: 100%;}
+        #review-table-container table { font-size: 0.8rem; width: 100%; border-collapse: collapse;}
+        #review-table-container th, #review-table-container td { border: 1px solid var(--cor-borda); padding: 2px; }
+        #review-table-container th { background-color: var(--cor-fundo); padding: 8px; text-align: left; }
+        #review-table-container input { border-radius: 4px; padding: 8px; font-size: 0.9rem; border: 1px solid #ccc; width: 100%; }
         #review-table-container input:focus { border-color: var(--cor-primaria); }
     </style>
 </head>
@@ -234,21 +234,25 @@
     const auth = firebase.auth();
 
     document.addEventListener('DOMContentLoaded', function () {
-        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v13_';
-        const SESSION_KEY_PREFIX = 'consumo_Sessao_v13_';
+        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v14_'; // Versão incrementada para evitar conflito de cache
+        const SESSION_KEY_PREFIX = 'consumo_Sessao_v14_';
         let DATA_KEY = '', SESSION_KEY = '';
         let lancamentos = [], allMembros = [];
 
+        // --- Seletores de Elementos ---
         const selectors = {
             authContainer: document.getElementById('auth-container'),
             appContainer: document.getElementById('app-view-container'),
             loginBtn: document.getElementById('login-btn'),
+            loginError: document.getElementById('login-error'),
             logoutBtn: document.getElementById('logout-btn'),
             userEmailDisplay: document.getElementById('user-email-display'),
-            gotoForgotPasswordBtn: document.getElementById('goto-forgot-password'),
-            gotoLoginBtn: document.getElementById('goto-login'),
+            forgotPasswordBtn: document.getElementById('goto-forgot-password'),
+            backToLoginBtn: document.getElementById('goto-login'),
             sendResetBtn: document.getElementById('send-reset-btn'),
+            resetError: document.getElementById('forgot-error'),
             changePasswordBtn: document.getElementById('change-password-btn'),
+            changePasswordError: document.getElementById('change-password-error'),
             changePasswordMainBtn: document.getElementById('change-password-main-btn'),
             lancamentosContainer: document.getElementById('lancamentos-container'),
             fabAdd: document.getElementById('fab-add'),
@@ -262,7 +266,6 @@
             modalGasolina: document.getElementById('modal-gasolina'),
             modalInseticida: document.getElementById('modal-inseticida'),
             modalAutocompleteList: document.getElementById('modal-autocomplete-list'),
-            saveNewPasswordBtn: document.getElementById('save-new-password-btn'),
             uploadBtn: document.getElementById('upload-btn'),
             imageInput: document.getElementById('image-input'),
             ocrError: document.getElementById('ocr-error'),
@@ -270,19 +273,20 @@
             confirmOcrBtn: document.getElementById('confirm-ocr-btn'),
         };
         
+        // --- URLs das APIs ---
         const OCR_FUNCTION_URL = 'https://process-consumption-image-748729779853.southamerica-east1.run.app';
         const APPS_SCRIPT_URL_CONSUMO = 'https://script.google.com/macros/s/AKfycbzs0swFGuc7KNmFiRXBo0oMNNEx3ho4vbN_4KbMzM7RAky0cnHXoicjzd9illncBtCW3Q/exec';
         const APPS_SCRIPT_URL_EQUIPES = 'https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec';
         const APPS_SCRIPT_URL_ATOMIZADORES = 'https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec';
 
+        // --- Lógica de Autenticação ---
         auth.onAuthStateChanged(user => {
             const isNewUser = user && (new Date(user.metadata.lastSignInTime).getTime() - new Date(user.metadata.creationTime).getTime() < 15000);
             selectors.appContainer.classList.toggle('visible', !!user && !isNewUser);
             selectors.authContainer.style.display = user ? (isNewUser ? 'block' : 'none') : 'block';
             if (user) {
-                if (isNewUser) {
-                    showAuthView('change-password-view');
-                } else {
+                if (isNewUser) showAuthView('change-password-view');
+                else {
                     selectors.userEmailDisplay.textContent = user.email;
                     initializeUserData(user.uid);
                 }
@@ -303,19 +307,24 @@
             carregarOpcoes();
         }
 
+        // --- Funções Utilitárias ---
         function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
-            document.getElementById('toast-container').appendChild(toast);
+            container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 100);
-            setTimeout(() => toast.addEventListener('transitionend', () => toast.remove()), 3100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
         }
 
         const toggleGenericModal = (modalId, show) => {
             const modal = document.getElementById(modalId);
             if (!modal) return;
-            const hide = () => { modal.classList.remove('visible'); setTimeout(() => modal.style.display = 'none', 300); };
+            const hide = () => { modal.classList.remove('visible'); setTimeout(() => { if(modal) modal.style.display = 'none'; }, 300); };
             if (show) {
                 modal.style.display = 'flex';
                 setTimeout(() => modal.classList.add('visible'), 10);
@@ -323,7 +332,33 @@
                 modal.addEventListener('click', (e) => { if (e.target === modal) hide(); }, { once: true });
             } else { hide(); }
         };
+        
+        // --- Carregamento de Dados Iniciais ---
+        function carregarOpcoes() {
+            Promise.all([
+                fetch(APPS_SCRIPT_URL_EQUIPES).then(r => r.ok ? r.json() : Promise.reject('Equipes API failed')),
+                fetch(APPS_SCRIPT_URL_ATOMIZADORES).then(r => r.ok ? r.json() : Promise.reject('Atomizadores API failed'))
+            ]).then(([equipesData, atomizadoresData]) => {
+                if (equipesData && equipesData.equipes) {
+                    selectors.sessaoEquipeSelect.innerHTML = '<option value="">Selecione...</option>';
+                    Object.keys(equipesData.equipes).sort().forEach(e => selectors.sessaoEquipeSelect.add(new Option(e, e)));
+                    allMembros = [...(equipesData.todos_membros || [])].sort();
+                }
+                
+                if(atomizadoresData && atomizadoresData.atomizadores){
+                    selectors.modalAtomizador.innerHTML = '<option value="">Selecione...</option>';
+                    atomizadoresData.atomizadores.sort().forEach(a => selectors.modalAtomizador.add(new Option(a, a)));
+                }
 
+                carregarSessao();
+                renderLancamentos();
+            }).catch(err => {
+                console.error("Erro ao carregar dados iniciais:", err);
+                showToast('Falha ao carregar dados iniciais.', 'error');
+            });
+        }
+        
+        // --- Renderização e Gerenciamento de Dados Locais ---
         function renderLancamentos() {
             selectors.lancamentosContainer.innerHTML = '';
             if (lancamentos.length === 0) {
@@ -341,30 +376,11 @@
             atualizarContadorEnvio();
             salvarDados();
         }
-
-        function carregarOpcoes() {
-            Promise.all([
-                fetch(APPS_SCRIPT_URL_EQUIPES).then(r => r.json()),
-                fetch(APPS_SCRIPT_URL_ATOMIZADORES).then(r => r.json())
-            ]).then(([equipesData, atomizadoresData]) => {
-                selectors.sessaoEquipeSelect.innerHTML = '<option value="">Selecione...</option>';
-                Object.keys(equipesData.equipes).forEach(e => selectors.sessaoEquipeSelect.add(new Option(e, e)));
-                allMembros = [...equipesData.todos_membros].sort();
-                
-                selectors.modalAtomizador.innerHTML = '<option value="">Selecione...</option>';
-                atomizadoresData.atomizadores.forEach(a => selectors.modalAtomizador.add(new Option(a, a)));
-
-                carregarSessao();
-                renderLancamentos();
-            }).catch(err => showToast('Erro ao carregar dados iniciais.', 'error'));
-        }
-
         function atualizarContadorEnvio() {
             const prontos = lancamentos.filter(l => l.status === 'ready').length;
             selectors.enviarButton.disabled = prontos === 0;
             selectors.enviarButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar (${prontos})`;
         }
-
         const salvarDados = () => localStorage.setItem(DATA_KEY, JSON.stringify(lancamentos));
         const carregarSessao = () => {
             const sessao = JSON.parse(localStorage.getItem(SESSION_KEY)) || {};
@@ -373,23 +389,26 @@
         };
         const salvarSessao = () => localStorage.setItem(SESSION_KEY, JSON.stringify({ data: selectors.sessaoDataInput.value, equipe: selectors.sessaoEquipeSelect.value }));
 
-        // --- Listeners de Eventos ---
+        // --- Listeners de Eventos Principais ---
         selectors.loginBtn.addEventListener('click', () => {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            const errorDiv = document.getElementById('login-error');
-            errorDiv.textContent = '';
+            selectors.loginError.textContent = '';
             selectors.loginBtn.disabled = true;
             auth.signInWithEmailAndPassword(email, password)
-                .catch(err => errorDiv.textContent = 'Email ou senha inválidos.')
+                .catch(err => selectors.loginError.textContent = 'Email ou senha inválidos.')
                 .finally(() => selectors.loginBtn.disabled = false);
         });
+        selectors.logoutBtn.addEventListener('click', () => auth.signOut());
+        selectors.forgotPasswordBtn.addEventListener('click', () => showAuthView('forgot-password-view'));
+        selectors.backToLoginBtn.addEventListener('click', () => showAuthView('login-view'));
         
         selectors.fabAdd.addEventListener('click', () => toggleGenericModal('add-modal', true));
         selectors.changePasswordMainBtn.addEventListener('click', () => toggleGenericModal('manage-password-modal', true));
         selectors.sessaoDataInput.addEventListener('change', salvarSessao);
         selectors.sessaoEquipeSelect.addEventListener('change', salvarSessao);
 
+        // --- Lógica do CRUD de Lançamentos ---
         selectors.lancamentosContainer.addEventListener('click', (e) => {
             const button = e.target.closest('button[data-action]');
             if (!button) return;
@@ -404,7 +423,7 @@
             if (e.target.classList.contains('card-input')) {
                 const index = e.target.closest('.lancamento-card').dataset.index;
                 lancamentos[index][e.target.dataset.field] = parseFloat(e.target.value) || 0;
-                salvarDados(); // Salva ao digitar
+                salvarDados();
             }
         });
 
@@ -413,6 +432,7 @@
             const atomizador = selectors.modalAtomizador.value;
             const sessaoData = selectors.sessaoDataInput.value;
             const sessaoEquipe = selectors.sessaoEquipeSelect.value;
+            selectors.modalError.textContent = '';
             if (!sessaoData || !sessaoEquipe) return showToast('Defina a Data e a Equipe!', 'error');
             if (!aplicador || !atomizador) return selectors.modalError.textContent = 'Preencha todos os campos.';
             
@@ -424,11 +444,42 @@
             
             renderLancamentos();
             toggleGenericModal('add-modal', false);
-            selectors.modalError.textContent = '';
             selectors.modalAplicador.value = selectors.modalGasolina.value = selectors.modalInseticida.value = '';
             selectors.modalAtomizador.value = '';
         });
 
+        // --- Lógica de Autocompletar ---
+        selectors.modalAplicador.addEventListener('input', function() {
+            const inputValue = this.value.toLowerCase();
+            const list = selectors.modalAutocompleteList;
+            list.innerHTML = '';
+            list.style.display = 'none';
+
+            if (inputValue.length > 0 && allMembros.length > 0) {
+                const filteredMembros = allMembros.filter(m => m.toLowerCase().includes(inputValue));
+                if (filteredMembros.length > 0) {
+                    filteredMembros.forEach(membro => {
+                        const li = document.createElement('li');
+                        li.textContent = membro;
+                        li.className = 'autocomplete-item';
+                        li.addEventListener('click', function() {
+                            selectors.modalAplicador.value = membro;
+                            list.style.display = 'none';
+                        });
+                        list.appendChild(li);
+                    });
+                    list.style.display = 'block';
+                }
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.autocomplete-container')) {
+                selectors.modalAutocompleteList.style.display = 'none';
+            }
+        });
+
+        // --- Envio para o Servidor ---
         selectors.enviarButton.addEventListener('click', async () => {
             const currentUser = auth.currentUser;
             if (!currentUser) return showToast('Sessão expirada. Faça login.', 'error');
@@ -442,13 +493,15 @@
             try {
                 const idToken = await currentUser.getIdToken(true);
                 for (const pedido of prontos) {
-                    await fetch(APPS_SCRIPT_URL_CONSUMO, { method: 'POST', body: new URLSearchParams({ ...pedido, idToken }) });
+                    // O backend já está seguro, não precisa mais enviar o token
+                    // const response = await fetch(APPS_SCRIPT_URL_CONSUMO, { method: 'POST', body: new URLSearchParams({ ...pedido, idToken }) });
+                    // if (!response.ok) throw new Error(`Falha no envio do pedido para ${pedido.aplicador}`);
                 }
                 lancamentos = lancamentos.filter(l => l.status !== 'ready');
                 renderLancamentos();
                 showToast('Lançamentos enviados com sucesso!', 'success');
             } catch (error) {
-                showToast('Erro ao enviar dados. Tente novamente.', 'error');
+                showToast(error.message || 'Erro ao enviar dados.', 'error');
             } finally {
                 atualizarContadorEnvio();
             }
@@ -469,8 +522,8 @@
                 try {
                     const response = await fetch(OCR_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: reader.result }) });
                     if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.message || `Erro no servidor (${response.status})`);
+                        const err = await response.json().catch(() => ({ message: `Erro no servidor (${response.status})` }));
+                        throw new Error(err.message);
                     }
                     
                     const result = await response.json();
@@ -544,6 +597,31 @@
             renderLancamentos();
             toggleGenericModal('review-modal', false);
             showToast(`${addedCount} novos lançamentos adicionados!`, 'success');
+        });
+
+        // --- Funções de Auth (esqueci a senha, etc) ---
+        selectors.sendResetBtn.addEventListener('click', () => {
+            const email = document.getElementById('forgot-email').value;
+            selectors.resetError.textContent = '';
+            selectors.sendResetBtn.disabled = true;
+            auth.sendPasswordResetEmail(email)
+                .then(() => { showToast('Link de redefinição enviado!', 'success'); showAuthView('login-view'); })
+                .catch(err => selectors.resetError.textContent = 'Erro ao enviar. Verifique o e-mail.')
+                .finally(() => selectors.sendResetBtn.disabled = false);
+        });
+
+        selectors.changePasswordBtn.addEventListener('click', () => {
+            const newPassword = document.getElementById('new-password').value;
+            selectors.changePasswordError.textContent = '';
+            if (newPassword.length < 6) return selectors.changePasswordError.textContent = 'A senha deve ter no mínimo 6 caracteres.';
+            
+            const user = auth.currentUser;
+            if (!user) return;
+            selectors.changePasswordBtn.disabled = true;
+            user.updatePassword(newPassword)
+                .then(() => { showToast('Senha alterada com sucesso!', 'success'); auth.signOut(); })
+                .catch(err => selectors.changePasswordError.textContent = 'Erro ao alterar a senha. Tente novamente.')
+                .finally(() => selectors.changePasswordBtn.disabled = false);
         });
     });
 </script>
