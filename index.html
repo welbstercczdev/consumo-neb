@@ -34,7 +34,7 @@
         }
         .main-container { padding: 15px; padding-bottom: 170px; max-width: 800px; margin: 0 auto; }
         .header { text-align: center; color: var(--cor-primaria-escura); margin-bottom: 20px; }
-        .header h1 { margin: 0; font-size: 1.8rem; cursor: pointer; user-select: none; -webkit-user-select: none; }
+        .header h1 { margin: 0; font-size: 1.8rem; }
         .session-panel { background-color: #fff; padding: 20px; border-radius: var(--borda-radius); margin-bottom: 20px; box-shadow: var(--sombra); }
         .session-panel h2 { margin: 0 0 15px; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
         .session-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -103,9 +103,16 @@
         #review-table-container th { background-color: var(--cor-fundo); padding: 8px; text-align: left; }
         #review-table-container input { border-radius: 4px; padding: 8px; font-size: 0.9rem; border: 1px solid #ccc; width: 100%; }
         #review-table-container input:focus { border-color: var(--cor-primaria); }
-        #ocr-panel {
-            display: none;
-        }
+        #ocr-panel { display: none; }
+        .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--cor-borda); }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-item label { margin-bottom: 0; color: var(--cor-texto); font-weight: 500; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--cor-sucesso); }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body>
@@ -150,6 +157,7 @@
             <h1>Controle de Consumo</h1>
             <div class="header-user">
                 <span id="user-email-display"></span>
+                <i class="fa-solid fa-gear" id="settings-btn" title="Configurações"></i>
                 <i class="fa-solid fa-key" id="change-password-main-btn" title="Alterar Senha"></i>
                 <i class="fa-solid fa-right-from-bracket" id="logout-btn" title="Sair"></i>
             </div>
@@ -157,7 +165,7 @@
 
         <div class="session-panel" id="ocr-panel">
             <h2><i class="fa-solid fa-camera"></i> Lançamento por Imagem</h2>
-            <p style="text-align:center; font-size:0.9rem; color:#6c757d;">Toque 5x no título para ativar/desativar.</p>
+            <p style="text-align:center; font-size:0.9rem; color:#6c757d;">Ative/desative esta função nas configurações (<i class="fa-solid fa-gear"></i>).</p>
             <input type="file" id="image-input" accept="image/*" style="display: none;">
             <button class="btn btn-primary" id="upload-btn" style="width:100%"><i class="fa-solid fa-upload"></i> Escolher Imagem</button>
             <div class="error-message" id="ocr-error"></div>
@@ -191,6 +199,23 @@
         <div class="modal-footer"><button class="btn btn-secondary close-btn" data-modal-id="add-modal">Cancelar</button><button class="btn btn-primary" id="modal-save-btn">Salvar</button></div>
     </div>
 </div>
+<div class="modal-overlay" id="settings-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Configurações</h2>
+            <button class="close-btn" data-modal-id="settings-modal">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-item">
+                <label for="toggle-ocr">Exibir Lançamento por Imagem</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="toggle-ocr">
+                    <label for="toggle-ocr" class="slider"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="modal-overlay" id="review-modal">
     <div class="modal-content" style="max-width: 95vw; width: 100%; overflow-x: auto;">
         <div class="modal-header"><h2>Revise os Dados Lidos</h2><button class="close-btn" data-modal-id="review-modal">×</button></div>
@@ -198,7 +223,6 @@
         <div class="modal-footer"><button class="btn btn-secondary close-btn" data-modal-id="review-modal">Cancelar</button><button class="btn btn-success" id="confirm-ocr-btn">Confirmar e Adicionar</button></div>
     </div>
 </div>
-<!-- Adicione outros modais como o 'confirm-modal' e 'manage-password-modal' aqui se necessário -->
 <div id="toast-container"></div>
     
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -218,8 +242,8 @@
     const auth = firebase.auth();
 
     document.addEventListener('DOMContentLoaded', function () {
-        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v16_';
-        const SESSION_KEY_PREFIX = 'consumo_Sessao_v16_';
+        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v17_';
+        const SESSION_KEY_PREFIX = 'consumo_Sessao_v17_';
         let DATA_KEY = '', SESSION_KEY = '';
         let lancamentos = [], allMembros = [];
 
@@ -240,39 +264,30 @@
             uploadBtn: document.getElementById('upload-btn'), imageInput: document.getElementById('image-input'),
             ocrError: document.getElementById('ocr-error'), reviewTableContainer: document.getElementById('review-table-container'),
             confirmOcrBtn: document.getElementById('confirm-ocr-btn'),
+            settingsBtn: document.getElementById('settings-btn'), toggleOcrSwitch: document.getElementById('toggle-ocr')
         };
         
         const OCR_FUNCTION_URL = 'https://process-consumption-image-748729779853.southamerica-east1.run.app';
         const APPS_SCRIPT_URL_EQUIPES = 'https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec';
         const APPS_SCRIPT_URL_ATOMIZADORES = 'https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec';
 
-        // --- LÓGICA DO GESTO SECRETO PARA REVELAR O OCR ---
+        // --- LÓGICA DO PAINEL DE CONFIGURAÇÕES ---
         const ocrPanel = document.getElementById('ocr-panel');
-        const secretTrigger = document.querySelector('.header h1');
-        let clickCount = 0;
-        let clickTimer = null;
-        const OCR_PANEL_VISIBLE_KEY = 'ocr_panel_visible_state_v2';
-
+        const OCR_PANEL_VISIBLE_KEY = 'ocr_panel_visible_state_v3';
         function setOcrPanelVisibility(visible) {
-            if (ocrPanel) { ocrPanel.style.display = visible ? 'block' : 'none'; }
+            if (ocrPanel) ocrPanel.style.display = visible ? 'block' : 'none';
+            if (selectors.toggleOcrSwitch) selectors.toggleOcrSwitch.checked = visible;
             localStorage.setItem(OCR_PANEL_VISIBLE_KEY, visible ? 'true' : 'false');
         }
-
-        if (localStorage.getItem(OCR_PANEL_VISIBLE_KEY) === 'true') {
-            setOcrPanelVisibility(true);
+        setOcrPanelVisibility(localStorage.getItem(OCR_PANEL_VISIBLE_KEY) === 'true');
+        if (selectors.settingsBtn) {
+            selectors.settingsBtn.addEventListener('click', () => toggleGenericModal('settings-modal', true));
         }
-        
-        if (secretTrigger) {
-            secretTrigger.addEventListener('click', () => {
-                clickCount++;
-                if (clickCount === 1) { clickTimer = setTimeout(() => { clickCount = 0; }, 2000); }
-                if (clickCount >= 5) {
-                    clearTimeout(clickTimer);
-                    clickCount = 0;
-                    const currentlyVisible = ocrPanel.style.display === 'block';
-                    setOcrPanelVisibility(!currentlyVisible);
-                    showToast(`Funcionalidade OCR ${!currentlyVisible ? 'ativada' : 'oculta'}`, !currentlyVisible ? 'success' : 'info');
-                }
+        if (selectors.toggleOcrSwitch) {
+            selectors.toggleOcrSwitch.addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                setOcrPanelVisibility(isChecked);
+                showToast(`Lançamento por Imagem ${isChecked ? 'ativado' : 'desativado'}.`, 'info');
             });
         }
         
@@ -285,10 +300,7 @@
             const isNewUser = user && (new Date(user.metadata.lastSignInTime).getTime() - new Date(user.metadata.creationTime).getTime() < 15000);
             selectors.appContainer.classList.toggle('visible', !!user && !isNewUser);
             selectors.authContainer.style.display = user ? (isNewUser ? 'block' : 'none') : 'block';
-            if (user) {
-                if (isNewUser) showAuthView('change-password-view');
-                else { selectors.userEmailDisplay.textContent = user.email; initializeUserData(user.uid); }
-            } else { showAuthView('login-view'); }
+            if (user) { if (isNewUser) showAuthView('change-password-view'); else { selectors.userEmailDisplay.textContent = user.email; initializeUserData(user.uid); } } else { showAuthView('login-view'); }
         });
         function showAuthView(viewId) { document.querySelectorAll('.auth-view').forEach(v => v.classList.remove('visible')); document.getElementById(viewId).classList.add('visible'); }
         function initializeUserData(uid) { DATA_KEY = `${DATA_KEY_PREFIX}${uid}`; SESSION_KEY = `${SESSION_KEY_PREFIX}${uid}`; lancamentos = JSON.parse(localStorage.getItem(DATA_KEY)) || []; carregarOpcoes(); }
@@ -321,7 +333,6 @@
             atualizarContadorEnvio();
             salvarDados();
         }
-        
         function atualizarContadorEnvio() { const prontos = lancamentos.filter(l => l.status === 'ready').length; selectors.enviarButton.disabled = prontos === 0; selectors.enviarButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar (${prontos})`; }
 
         // --- LISTENERS DE EVENTOS ---
@@ -330,7 +341,7 @@
         selectors.logoutBtn.addEventListener('click', () => auth.signOut());
         selectors.forgotPasswordBtn.addEventListener('click', () => showAuthView('forgot-password-view'));
         selectors.backToLoginBtn.addEventListener('click', () => showAuthView('login-view'));
-
+        
         // App
         selectors.fabAdd.addEventListener('click', () => { selectors.modalError.textContent = ''; selectors.modalAplicador.value = selectors.modalGasolina.value = selectors.modalInseticida.value = ''; selectors.modalAtomizador.value = ''; toggleGenericModal('add-modal', true); });
         selectors.changePasswordMainBtn.addEventListener('click', () => toggleGenericModal('manage-password-modal', true));
