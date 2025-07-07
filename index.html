@@ -164,6 +164,12 @@
             </div>
         </header>
 
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="install-button" class="btn btn-secondary" style="display: none; background-color: #6c757d; color: white;">
+                <i class="fa-solid fa-download"></i> Instalar Aplicativo
+            </button>
+        </div>
+        
         <div class="session-panel" id="ocr-panel">
             <h2><i class="fa-solid fa-camera"></i> Lançamento por Imagem</h2>
             <p style="text-align:center; font-size:0.9rem; color:#6c757d;">Ative/desative nas configurações (<i class="fa-solid fa-gear"></i>).</p>
@@ -265,7 +271,8 @@
             uploadBtn: document.getElementById('upload-btn'), imageInput: document.getElementById('image-input'),
             ocrError: document.getElementById('ocr-error'), reviewTableContainer: document.getElementById('review-table-container'),
             confirmOcrBtn: document.getElementById('confirm-ocr-btn'),
-            settingsBtn: document.getElementById('settings-btn'), toggleOcrSwitch: document.getElementById('toggle-ocr')
+            settingsBtn: document.getElementById('settings-btn'), toggleOcrSwitch: document.getElementById('toggle-ocr'),
+            installButton: document.getElementById('install-button')
         };
         
         const OCR_FUNCTION_URL = 'https://process-consumption-image-748729779853.southamerica-east1.run.app';
@@ -400,6 +407,48 @@
                 });
         });
     }
+
+    // Lógica para o botão de instalação manual
+    let deferredPrompt;
+    const installButton = document.getElementById('install-button');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Previne que o Chrome mostre o prompt automaticamente
+        e.preventDefault();
+        // Guarda o evento para ser usado depois
+        deferredPrompt = e;
+        // Mostra o nosso botão personalizado
+        if (installButton) {
+            installButton.style.display = 'inline-flex';
+        }
+    });
+
+    if (installButton) {
+        installButton.addEventListener('click', (e) => {
+            // Esconde nosso botão, pois ele não será mais necessário
+            installButton.style.display = 'none';
+            // Mostra o prompt de instalação
+            deferredPrompt.prompt();
+            // Espera pela resposta do usuário
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('Usuário aceitou a instalação');
+                } else {
+                    console.log('Usuário recusou a instalação');
+                }
+                deferredPrompt = null;
+            });
+        });
+    }
+
+    window.addEventListener('appinstalled', (evt) => {
+        // Loga quando o app é instalado
+        console.log('App instalado com sucesso!');
+        if (installButton) {
+            installButton.style.display = 'none';
+        }
+        deferredPrompt = null;
+    });
 </script>
 
 </body>
