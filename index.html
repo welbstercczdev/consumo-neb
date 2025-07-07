@@ -165,7 +165,7 @@
 
         <div class="session-panel" id="ocr-panel">
             <h2><i class="fa-solid fa-camera"></i> Lançamento por Imagem</h2>
-            <p style="text-align:center; font-size:0.9rem; color:#6c757d;">Ative/desative esta função nas configurações (<i class="fa-solid fa-gear"></i>).</p>
+            <p style="text-align:center; font-size:0.9rem; color:#6c757d;">Ative/desative nas configurações (<i class="fa-solid fa-gear"></i>).</p>
             <input type="file" id="image-input" accept="image/*" style="display: none;">
             <button class="btn btn-primary" id="upload-btn" style="width:100%"><i class="fa-solid fa-upload"></i> Escolher Imagem</button>
             <div class="error-message" id="ocr-error"></div>
@@ -242,8 +242,8 @@
     const auth = firebase.auth();
 
     document.addEventListener('DOMContentLoaded', function () {
-        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v17_';
-        const SESSION_KEY_PREFIX = 'consumo_Sessao_v17_';
+        const DATA_KEY_PREFIX = 'consumo_Lancamentos_v18_';
+        const SESSION_KEY_PREFIX = 'consumo_Sessao_v18_';
         let DATA_KEY = '', SESSION_KEY = '';
         let lancamentos = [], allMembros = [];
 
@@ -268,8 +268,13 @@
         };
         
         const OCR_FUNCTION_URL = 'https://process-consumption-image-748729779853.southamerica-east1.run.app';
+        const APPS_SCRIPT_URL_CONSUMO = 'https://script.google.com/macros/s/AKfycbzs0swFGuc7KNmFiRXBo0oMNNEx3ho4vbN_4KbMzM7RAky0cnHXoicjzd9illncBtCW3Q/exec';
         const APPS_SCRIPT_URL_EQUIPES = 'https://script.google.com/macros/s/AKfycbwCWeO-4U-CTHi30do2CsnxpgqiEOybOm-8-kEXz4z68xU9gsIr0I7mloBV2RfrmD_9/exec';
         const APPS_SCRIPT_URL_ATOMIZADORES = 'https://script.google.com/macros/s/AKfycbzK2AEiMd6qj0AQ78L5-cB9v8jiokYzpp2jCyU_yqzh2tLMguFNqXHLajb4yAApuSjFLA/exec';
+
+        // --- FUNÇÕES UTILITÁRIAS ---
+        function showToast(message, type = 'success') { const c = document.getElementById('toast-container'); if (!c) return; const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 100); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 3000); }
+        const toggleGenericModal = (id, show) => { const m = document.getElementById(id); if (!m) return; const h = () => { m.classList.remove('visible'); setTimeout(() => m.style.display = 'none', 300); }; if (show) { m.style.display = 'flex'; setTimeout(() => m.classList.add('visible'), 10); m.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', h, { once: true })); m.addEventListener('click', (e) => { if (e.target === m) h(); }, { once: true }); } else h(); };
 
         // --- LÓGICA DO PAINEL DE CONFIGURAÇÕES ---
         const ocrPanel = document.getElementById('ocr-panel');
@@ -291,10 +296,6 @@
             });
         }
         
-        // --- FUNÇÕES UTILITÁRIAS ---
-        function showToast(message, type = 'success') { const c = document.getElementById('toast-container'); if (!c) return; const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 100); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 3000); }
-        const toggleGenericModal = (id, show) => { const m = document.getElementById(id); if (!m) return; const h = () => { m.classList.remove('visible'); setTimeout(() => m.style.display = 'none', 300); }; if (show) { m.style.display = 'flex'; setTimeout(() => m.classList.add('visible'), 10); m.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', h, { once: true })); m.addEventListener('click', (e) => { if (e.target === m) h(); }, { once: true }); } else h(); };
-
         // --- LÓGICA DE AUTENTICAÇÃO ---
         auth.onAuthStateChanged(user => {
             const isNewUser = user && (new Date(user.metadata.lastSignInTime).getTime() - new Date(user.metadata.creationTime).getTime() < 15000);
@@ -336,28 +337,48 @@
         function atualizarContadorEnvio() { const prontos = lancamentos.filter(l => l.status === 'ready').length; selectors.enviarButton.disabled = prontos === 0; selectors.enviarButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar (${prontos})`; }
 
         // --- LISTENERS DE EVENTOS ---
-        // Auth
         selectors.loginBtn.addEventListener('click', () => { const email = document.getElementById('login-email').value, pass = document.getElementById('login-password').value; selectors.loginError.textContent = ''; selectors.loginBtn.disabled = true; auth.signInWithEmailAndPassword(email, pass).catch(err => selectors.loginError.textContent = 'Email ou senha inválidos.').finally(() => selectors.loginBtn.disabled = false); });
         selectors.logoutBtn.addEventListener('click', () => auth.signOut());
         selectors.forgotPasswordBtn.addEventListener('click', () => showAuthView('forgot-password-view'));
         selectors.backToLoginBtn.addEventListener('click', () => showAuthView('login-view'));
-        
-        // App
         selectors.fabAdd.addEventListener('click', () => { selectors.modalError.textContent = ''; selectors.modalAplicador.value = selectors.modalGasolina.value = selectors.modalInseticida.value = ''; selectors.modalAtomizador.value = ''; toggleGenericModal('add-modal', true); });
         selectors.changePasswordMainBtn.addEventListener('click', () => toggleGenericModal('manage-password-modal', true));
         selectors.sessaoDataInput.addEventListener('change', salvarSessao);
         selectors.sessaoEquipeSelect.addEventListener('change', salvarSessao);
         
-        // CRUD Lançamentos
         selectors.lancamentosContainer.addEventListener('click', (e) => { const btn = e.target.closest('button[data-action]'); if (!btn) return; const idx = e.target.closest('.lancamento-card').dataset.index; const action = btn.dataset.action; if (action === 'delete') { lancamentos.splice(idx, 1); showToast('Removido.', 'success'); } else { lancamentos[idx].status = action === 'complete' ? 'ready' : 'pending'; } renderLancamentos(); });
         selectors.lancamentosContainer.addEventListener('input', (e) => { if (e.target.classList.contains('card-input')) { const idx = e.target.closest('.lancamento-card').dataset.index; lancamentos[idx][e.target.dataset.field] = parseFloat(e.target.value) || 0; salvarDados(); } });
         selectors.modalSaveBtn.addEventListener('click', () => { const app = selectors.modalAplicador.value.trim(), atm = selectors.modalAtomizador.value, sData = selectors.sessaoDataInput.value, sEquipe = selectors.sessaoEquipeSelect.value; selectors.modalError.textContent = ''; if (!sData || !sEquipe) return showToast('Defina a Data e a Equipe!', 'error'); if (!app || !atm) return selectors.modalError.textContent = 'Preencha todos os campos.'; const chave = `${sData}-${sEquipe}-${app}-${atm}`; if (lancamentos.some(l => l.chave === chave)) return selectors.modalError.textContent = 'Lançamento já existe.'; const [y, m, d] = sData.split('-'); lancamentos.push({ chave, data: sData, data_fmt: `${d}/${m}/${y}`, equipe: sEquipe, aplicador: app, atomizador: atm, gasolina: parseFloat(selectors.modalGasolina.value) || 0, inseticida: parseFloat(selectors.modalInseticida.value) || 0, status: 'pending' }); renderLancamentos(); toggleGenericModal('add-modal', false); });
         
-        // Autocomplete
         selectors.modalAplicador.addEventListener('input', function() { const v = this.value.toLowerCase(), l = selectors.modalAutocompleteList; l.innerHTML = ''; l.style.display = 'none'; if (v.length > 0 && allMembros.length > 0) { const f = allMembros.filter(m => m.toLowerCase().includes(v)); if (f.length > 0) { f.forEach(m => { const i = document.createElement('li'); i.textContent = m; i.className = 'autocomplete-item'; i.addEventListener('click', () => { selectors.modalAplicador.value = m; l.style.display = 'none'; }); l.appendChild(i); }); l.style.display = 'block'; } } });
         document.addEventListener('click', (e) => { if (!e.target.closest('.autocomplete-container')) selectors.modalAutocompleteList.style.display = 'none'; });
         
-        // OCR
+        selectors.enviarButton.addEventListener('click', async () => {
+            const currentUser = auth.currentUser;
+            if (!currentUser) return showToast('Sessão expirada. Faça login.', 'error');
+            const prontos = lancamentos.filter(l => l.status === 'ready');
+            if (prontos.length === 0) return;
+            selectors.enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+            selectors.enviarButton.disabled = true;
+            try {
+                const idToken = await currentUser.getIdToken(true);
+                const promises = prontos.map(pedido => {
+                    const formData = new URLSearchParams({ ...pedido, idToken });
+                    return fetch(APPS_SCRIPT_URL_CONSUMO, { method: 'POST', body: formData, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, mode: 'cors' })
+                        .then(response => { if (!response.ok) return response.text().then(text => { throw new Error(text || `Falha no envio para ${pedido.aplicador}`) }); return true; });
+                });
+                await Promise.all(promises);
+                lancamentos = lancamentos.filter(l => l.status !== 'ready');
+                renderLancamentos();
+                showToast('Lançamentos enviados com sucesso!', 'success');
+            } catch (error) {
+                console.error("Erro ao enviar:", error);
+                showToast(error.message || 'Erro ao enviar dados.', 'error');
+            } finally {
+                atualizarContadorEnvio();
+            }
+        });
+        
         selectors.uploadBtn.addEventListener('click', () => selectors.imageInput.click());
         selectors.imageInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; selectors.uploadBtn.disabled = true; selectors.uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Lendo...'; selectors.ocrError.textContent = ''; const r = new FileReader(); r.onloadend = async () => { try { const rsp = await fetch(OCR_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: r.result }) }); if (!rsp.ok) { const err = await rsp.json().catch(() => ({ message: `Erro no servidor (${rsp.status})` })); throw new Error(err.message); } const result = await rsp.json(); if (result.data && result.data.length > 0) displayReviewData(result.data); else selectors.ocrError.textContent = result.message || 'Nenhum dado encontrado.'; } catch (err) { console.error("OCR Error:", err); selectors.ocrError.textContent = `Falha: ${err.message}`; } finally { selectors.uploadBtn.disabled = false; selectors.uploadBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Escolher Imagem'; selectors.imageInput.value = ''; } }; r.readAsDataURL(f); });
         
