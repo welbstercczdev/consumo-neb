@@ -6,7 +6,7 @@
     
     <!-- PWA -->
     <meta name="theme-color" content="#0056b3">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 
     <title>Controle de Consumo</title>
@@ -290,9 +290,8 @@
         }
         if (selectors.toggleOcrSwitch) {
             selectors.toggleOcrSwitch.addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                setOcrPanelVisibility(isChecked);
-                showToast(`Lançamento por Imagem ${isChecked ? 'ativado' : 'desativado'}.`, 'info');
+                setOcrPanelVisibility(e.target.checked);
+                showToast(`Lançamento por Imagem ${e.target.checked ? 'ativado' : 'desativado'}.`, 'info');
             });
         }
         
