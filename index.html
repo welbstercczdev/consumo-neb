@@ -360,31 +360,58 @@
         selectors.modalAplicador.addEventListener('input', function() { const v = this.value.toLowerCase(), l = selectors.modalAutocompleteList; l.innerHTML = ''; l.style.display = 'none'; if (v.length > 0 && allMembros.length > 0) { const f = allMembros.filter(m => m.toLowerCase().includes(v)); if (f.length > 0) { f.forEach(m => { const i = document.createElement('li'); i.textContent = m; i.className = 'autocomplete-item'; i.addEventListener('click', () => { selectors.modalAplicador.value = m; l.style.display = 'none'; }); l.appendChild(i); }); l.style.display = 'block'; } } });
         document.addEventListener('click', (e) => { if (!e.target.closest('.autocomplete-container')) selectors.modalAutocompleteList.style.display = 'none'; });
         
-        selectors.enviarButton.addEventListener('click', async () => {
-            const currentUser = auth.currentUser;
-            if (!currentUser) return showToast('Sessão expirada. Faça login.', 'error');
-            const prontos = lancamentos.filter(l => l.status === 'ready');
-            if (prontos.length === 0) return;
-            selectors.enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-            selectors.enviarButton.disabled = true;
-            try {
-                const idToken = await currentUser.getIdToken(true);
-                const promises = prontos.map(pedido => {
-                    const formData = new URLSearchParams({ ...pedido, idToken });
-                    return fetch(APPS_SCRIPT_URL_CONSUMO, { method: 'POST', body: formData, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, mode: 'cors' })
-                        .then(response => { if (!response.ok) return response.text().then(text => { throw new Error(text || `Falha no envio para ${pedido.aplicador}`) }); return true; });
-                });
-                await Promise.all(promises);
-                lancamentos = lancamentos.filter(l => l.status !== 'ready');
-                renderLancamentos();
-                showToast('Lançamentos enviados com sucesso!', 'success');
-            } catch (error) {
-                console.error("Erro ao enviar:", error);
-                showToast(error.message || 'Erro ao enviar dados.', 'error');
-            } finally {
-                atualizarContadorEnvio();
-            }
+     // SUBSTITUA o listener do enviarButton por este:
+selectors.enviarButton.addEventListener('click', async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return showToast('Sessão expirada. Faça login.', 'error');
+
+    const prontosParaEnviar = lancamentos.filter(l => l.status === 'ready');
+    if (prontosParaEnviar.length === 0) return;
+
+    selectors.enviarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    selectors.enviarButton.disabled = true;
+
+    try {
+        const idToken = await currentUser.getIdToken(true);
+
+        // 1. Preparamos um payload que contém o token e um array de lançamentos.
+        const payload = {
+            idToken: idToken,
+            // Convertemos o array de objetos 'prontos' em uma string JSON.
+            lancamentos: JSON.stringify(prontosParaEnviar) 
+        };
+
+        // 2. Criamos o corpo do formulário com este payload.
+        const formData = new URLSearchParams(payload);
+        
+        // 3. FAZEMOS UMA ÚNICA CHAMADA FETCH com todos os dados.
+        const response = await fetch(APPS_SCRIPT_URL_CONSUMO, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            mode: 'cors'
         });
+
+        const result = await response.json(); // Esperamos uma resposta JSON do backend.
+        
+        if (!response.ok || result.status !== 'success') {
+            throw new Error(result.message || `Falha no envio em lote.`);
+        }
+        
+        // 4. Se o envio foi um sucesso, removemos todos os itens enviados da lista.
+        lancamentos = lancamentos.filter(l => l.status !== 'ready');
+        renderLancamentos();
+        showToast(`${prontosParaEnviar.length} lançamento(s) enviado(s) com sucesso!`, 'success');
+
+    } catch (error) {
+        console.error("Erro ao enviar em lote:", error);
+        showToast(error.message || 'Erro ao enviar dados.', 'error');
+    } finally {
+        // A função atualizarContadorEnvio() já é chamada dentro de renderLancamentos(),
+        // mas é bom garantir que o botão seja reativado.
+        atualizarContadorEnvio();
+    }
+});
         
         selectors.uploadBtn.addEventListener('click', () => selectors.imageInput.click());
         selectors.imageInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; selectors.uploadBtn.disabled = true; selectors.uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Lendo...'; selectors.ocrError.textContent = ''; const r = new FileReader(); r.onloadend = async () => { try { const rsp = await fetch(OCR_FUNCTION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: r.result }) }); if (!rsp.ok) { const err = await rsp.json().catch(() => ({ message: `Erro no servidor (${rsp.status})` })); throw new Error(err.message); } const result = await rsp.json(); if (result.data && result.data.length > 0) displayReviewData(result.data); else selectors.ocrError.textContent = result.message || 'Nenhum dado encontrado.'; } catch (err) { console.error("OCR Error:", err); selectors.ocrError.textContent = `Falha: ${err.message}`; } finally { selectors.uploadBtn.disabled = false; selectors.uploadBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Escolher Imagem'; selectors.imageInput.value = ''; } }; r.readAsDataURL(f); });
